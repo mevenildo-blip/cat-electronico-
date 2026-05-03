@@ -224,7 +224,14 @@ function buildReview(){
   sections.forEach(function(sec){
     document.getElementById(sec.id).innerHTML=sec.fields.map(function(f){return'<div class="review-row"><span class="review-key">'+f[0]+':</span><span class="'+(f[1]?'review-val':'review-empty')+'">'+(f[1]||'não preenchido')+'</span></div>';}).join('');
   });
-}
+  });
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+  
 async function generatePDF(){
   if(!jspdfReady)return;
   var btn=document.getElementById('btnGenerate');

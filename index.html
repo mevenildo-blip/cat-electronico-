@@ -4,6 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>CAT Eletrónico</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 :root{--bg:#050810;--bg2:#080c10;--bg3:#0d1520;--border:#1e2530;--text:#dce6f0;--muted:#5a7a99;--dim:#3a4455;--cyan:#00c4ff;--orange:#f0a500;--orange2:#ff5e00;--green:#3fb950;}
@@ -233,8 +235,11 @@ function buildReview(){
 <script>
   
 async function generatePDF(){
-  if(!jspdfReady)return;
-  var btn=document.getElementById('btnGenerate');
+  if(typeof window.jspdf === 'undefined'){
+  document.getElementById('btnGenerate').textContent='Erro: Recarregue';
+  return;
+}
+var btn=document.getElementById('btnGenerate');
   btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span> A gerar...';
   try{
     var jsPDF=window.jspdf.jsPDF;

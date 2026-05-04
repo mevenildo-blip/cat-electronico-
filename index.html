@@ -289,28 +289,8 @@ var btn=document.getElementById('btnGenerate');
     document.getElementById('successBanner').classList.remove('hidden');
   }catch(e){alert('Erro ao gerar PDF: '+e.message);}
   btn.disabled=false;btn.innerHTML='⬇ Gerar PDF';
-}
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(function() {
-    var status = document.getElementById('pdfStatus');
-    if (!status) return;
-    
-    try {
-      if (typeof window.jspdf !== 'undefined') {
-        status.textContent = '• PDF pronto';
-        status.classList.add('ready');
-      } else {
-        status.textContent = '• Erro no PDF';
-        status.style.color = '#ef4444';
-      }
-    } catch(e) {
-      status.textContent = '• Erro no PDF';
-      status.style.color = '#ef4444';
-    }
-  }, 1500);
 });
-      </script>
-</body>
+</script> 
+  
+</body> 
 </html>

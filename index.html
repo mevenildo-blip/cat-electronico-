@@ -31,18 +31,18 @@
     const lista = document.querySelector('#lista')
 
     async function carregarItens() {
-      const { data, error } = await supabase.from('itens').select('*').order('id')
+      const { data, error } = await supabase.from('items').select('*').order
       if (error) alert('ERRO AO CARREGAR: ' + error.message)
       lista.innerHTML = ''
       data?.forEach(item => {
-        lista.innerHTML += `<div>${item.nome}</div>`
+      lista.innerHTML += `<div>${item.text}</div>`
       })
     }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault()
       const nome = input.value
-      const { error } = await supabase.from('itens').insert({ nome })
+      const { error } = await supabase.from('items').insert({ text: nome })
       if (error) alert('ERRO AO ADICIONAR: ' + error.message)
       input.value = ''
       carregarItens()

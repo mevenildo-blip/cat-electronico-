@@ -31,7 +31,7 @@
     const lista = document.querySelector('#lista')
 
     async function carregarItens() {
-      const { data, error } = await supabase.from('items').select('*').order
+      .select('*').order('created_at', { ascending: false })
       if (error) alert('ERRO AO CARREGAR: ' + error.message)
       lista.innerHTML = ''
       data?.forEach(item => {

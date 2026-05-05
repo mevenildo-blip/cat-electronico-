@@ -1,93 +1,54 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cat Electronico</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            max-width: 500px; 
-            margin: 0 auto; 
-            padding: 20px;
-            background: #1a1a1a;
-            color: white;
-        }
-        h1 { color: #00ff88; text-align: center; }
-        input, button { 
-            width: 100%; 
-            padding: 12px; 
-            margin: 8px 0; 
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        button { 
-            background: #00ff88; 
-            color: black; 
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .lista { margin-top: 20px; }
-        .item { 
-            background: #2a2a2a; 
-            padding: 10px; 
-            margin: 5px 0; 
-            border-radius: 8px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cat Eletrônico</title>
+  <style>
+    body { background: #111; color: #0f0; font-family: sans-serif; text-align: center; padding: 20px; }
+    input, button { padding: 10px; margin: 5px; border-radius: 5px; border: none; }
+    button { background: #0f0; color: #111; font-weight: bold; cursor: pointer; }
+    #lista div { background: #222; margin: 5px; padding: 10px; border-radius: 5px; }
+  </style>
 </head>
 <body>
-    <h1>Cat Electronico 🐱</h1>
+  <h1>Cat Eletrônico 😻</h1>
+  <form>
+    <input type="text" placeholder="Digite algo..." required>
+    <button type="submit">Adicionar</button>
+  </form>
+  <div id="lista"></div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
     
-    <input type="text" id="nomeItem" placeholder="Digite um item...">
-    <button onclick="adicionarItem()">Adicionar</button>
-    
-    <div class="lista" id="listaItens"></div>
+    const supabaseUrl = 'https://dbjawohqwbwqduzglxcf.supabase.co'
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiamF3b2hxd2J3cWR1emdseGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcwOTI0MjcsImV4cCI6MjA2MjY2ODQyN30.RDtB4lB5ggP7Ca9kK2YEh-urqzM33xHj54b7F-WEpQE'
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
-    <script>
-        // CONFIGURAÇÃO SUPABASE
-        const supabaseUrl = 'https://dbjawohqwbwqduzglxcf.supabase.co'
-        const supabaseKey = 'sb_publishable_fK5b31w8M-CJCIM9J4T4Gw_F2OlhpTO'
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+    const form = document.querySelector('form')
+    const input = document.querySelector('input')
+    const lista = document.querySelector('#lista')
 
-        // CARREGAR ITENS QUANDO ABRE A PÁGINA
-        carregarItens()
+    async function carregarItens() {
+      const { data, error } = await supabase.from('itens').select('*').order('id')
+      if (error) alert('ERRO AO CARREGAR: ' + error.message)
+      lista.innerHTML = ''
+      data?.forEach(item => {
+        lista.innerHTML += `<div>${item.nome}</div>`
+      })
+    }
 
-        async function carregarItens() {
-            const { data, error } = await supabase
-                .from('itens')
-                .select('*')
-                .order('created_at', { ascending: false })
-            
-            if (error) {
-                console.error('Erro:', error)
-                return
-            }
-            
-            const lista = document.getElementById('listaItens')
-            lista.innerHTML = ''
-            data.forEach(item => {
-                lista.innerHTML += `<div class="item">${item.nome}</div>`
-            })
-        }
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const nome = input.value
+      const { error } = await supabase.from('itens').insert({ nome })
+      if (error) alert('ERRO AO ADICIONAR: ' + error.message)
+      input.value = ''
+      carregarItens()
+    })
 
-        async function adicionarItem() {
-            const nome = document.getElementById('nomeItem').value
-            if (!nome) return alert('Digite algo!')
-            
-            const { error } = await supabase
-                .from('itens')
-                .insert([{ nome: nome }])
-            
-            if (error) {
-                alert('Erro ao salvar: ' + error.message)
-            } else {
-                document.getElementById('nomeItem').value = ''
-                carregarItens()
-            }
-        }
-    </script>
+    carregarItens()
+  </script>
 </body>
 </html>

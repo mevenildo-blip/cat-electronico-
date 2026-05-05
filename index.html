@@ -9,7 +9,20 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
+  <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAO5B0FkWv3N0A7QwVtS7YynWOUu6HxIYA",
+    authDomain: "cat-electronico-48140.firebaseapp.com",
+    projectId: "cat-electronico-48140",
+    storageBucket: "cat-electronico-48140.firebasestorage.app",
+    messagingSenderId: "305548744010",
+    appId: "1:305548744010:web:7005c4cce3378dce4a24e2"
+  };
+  
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+</script>
   
   <style>
     * { margin:0; padding:0; box-sizing:border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }

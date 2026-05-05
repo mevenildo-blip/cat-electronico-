@@ -1,54 +1,236 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cat Eletrônico</title>
+  <title>CAT Eletrônico - Comunicação de Acidente de Trabalho</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    body { background: #111; color: #0f0; font-family: sans-serif; text-align: center; padding: 20px; }
-    input, button { padding: 10px; margin: 5px; border-radius: 5px; border: none; }
-    button { background: #0f0; color: #111; font-weight: bold; cursor: pointer; }
-    #lista div { background: #222; margin: 5px; padding: 10px; border-radius: 5px; }
+    * { margin:0; padding:0; box-sizing:border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { background:#0f0f0f; color:#fff; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+   .card { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:16px; padding:32px; width:100%; max-width:480px; }
+   .header { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+   .icon { background:#ff6b00; padding:8px; border-radius:8px; }
+    h1 { font-size:18px; font-weight:700; letter-spacing:1px; }
+   .subtitle { font-size:11px; color:#888; margin-top:2px; }
+   .tabs { display:flex; background:#0f0f0f; border-radius:8px; padding:4px; margin-bottom:24px; }
+   .tab { flex:1; padding:10px; border:none; background:transparent; color:#888; border-radius:6px; font-weight:600; cursor:pointer; }
+   .tab.active { background:#2d88ff; color:#fff; }
+    input, select, textarea { width:100%; background:#0f0f0f; border:1px solid #2a2a2a; border-radius:8px; padding:12px; color:#fff; margin-bottom:12px; font-size:14px; }
+    label { font-size:12px; color:#aaa; margin-bottom:6px; display:block; }
+   .btn { width:100%; padding:14px; border:none; border-radius:8px; font-weight:700; cursor:pointer; margin-top:8px; }
+   .btn-primary { background:linear-gradient(90deg,#ff9500,#ff6b00); color:#000; }
+   .btn-secondary { background:#2d88ff; color:#fff; }
+   .form-group { margin-bottom:16px; }
+   .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+   .hidden { display:none; }
+    h3 { font-size:14px; margin:20px 0 12px; color:#ff6b00; }
   </style>
 </head>
 <body>
-  <h1>Cat Eletrônico 😻</h1>
-  <form>
-    <input type="text" placeholder="Digite algo..." required>
-    <button type="submit">Adicionar</button>
-  </form>
-  <div id="lista"></div>
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+<div class="card" id="authCard">
+  <div class="header">
+    <div class="icon">⚠️</div>
+    <div>
+      <h1>CAT ELETRÔNICO</h1>
+      <div class="subtitle">COMUNICAÇÃO DE ACIDENTE DE TRABALHO</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="mostrarLogin()">Entrar</button>
+    <button class="tab" onclick="mostrarRegistro()">Registar</button>
+  </div>
+
+  <div id="loginForm">
+    <label>EMAIL</label>
+    <input type="email" id="loginEmail" placeholder="empresa@email.com">
+    <label>PASSWORD</label>
+    <input type="password" id="loginSenha" placeholder="••••••••">
+    <button class="btn btn-primary" onclick="login()">Entrar →</button>
+  </div>
+
+  <div id="registroForm" class="hidden">
+    <label>NOME DA EMPRESA</label>
+    <input type="text" id="regEmpresa" placeholder="Empresa LTDA">
+    <label>CNPJ</label>
+    <input type="text" id="regCnpj" placeholder="00.000.000/0000-00">
+    <label>EMAIL</label>
+    <input type="email" id="regEmail" placeholder="empresa@email.com">
+    <label>PASSWORD</label>
+    <input type="password" id="regSenha" placeholder="••••••••">
+    <button class="btn btn-primary" onclick="registrar()">Criar Conta →</button>
+  </div>
+</div>
+
+<div class="card hidden" id="catCard" style="max-width:700px;">
+  <div class="header">
+    <div class="icon">⚠️</div>
+    <div>
+      <h1>NOVA CAT</h1>
+      <div class="subtitle" id="empresaNome"></div>
+    </div>
+    <button onclick="logout()" style="margin-left:auto; background:#2a2a2a; color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">Sair</button>
+  </div>
+
+  <h3>1. DADOS DO EMPREGADOR</h3>
+  <div class="grid-2">
+    <div><label>Razão Social</label><input id="razao_social"></div>
+    <div><label>CNPJ</label><input id="cnpj"></div>
+  </div>
+
+  <h3>2. DADOS DO ACIDENTADO</h3>
+  <div class="grid-2">
+    <div><label>Nome Completo</label><input id="nome_acidentado"></div>
+    <div><label>CPF</label><input id="cpf"></div>
+  </div>
+  <div class="grid-2">
+    <div><label>Data Nascimento</label><input type="date" id="nascimento"></div>
+    <div><label>Sexo</label>
+      <select id="sexo"><option>Masculino</option><option>Feminino</option></select>
+    </div>
+  </div>
+
+  <h3>3. DADOS DO ACIDENTE</h3>
+  <div class="grid-2">
+    <div><label>Data do Acidente</label><input type="date" id="data_acidente"></div>
+    <div><label>Hora</label><input type="time" id="hora_acidente"></div>
+  </div>
+  <label>Local do Acidente</label>
+  <input id="local_acidente" placeholder="Ex: Galpão 3, Máquina 12">
+  <label>Descrição do Acidente</label>
+  <textarea id="descricao" rows="3" placeholder="Descreva como ocorreu o acidente"></textarea>
+  
+  <h3>4. ATENDIMENTO MÉDICO</h3>
+  <div class="grid-2">
+    <div><label>CID-10</label><input id="cid" placeholder="Ex: S61.0"></div>
+    <div><label>Houve Afastamento?</label>
+      <select id="afastamento"><option>Sim</option><option>Não</option></select>
+    </div>
+  </div>
+
+  <button class="btn btn-secondary" onclick="salvarCAT()">Salvar CAT no Banco</button>
+  <button class="btn btn-primary" onclick="gerarPDFCAT()">Gerar PDF Oficial 📄</button>
+</div>
+
+<script>
+  // TROCA PELAS TUAS CHAVES DO SUPABASE
+  const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co';
+  const SUPABASE_ANON_KEY = 'SUA-CHAVE-ANON';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // CONTROLE DE TELAS
+  function mostrarLogin() {
+    document.getElementById('loginForm').classList.remove('hidden');
+    document.getElementById('registroForm').classList.add('hidden');
+    document.querySelectorAll('.tab')[0].classList.add('active');
+    document.querySelectorAll('.tab')[1].classList.remove('active');
+  }
+  function mostrarRegistro() {
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('registroForm').classList.remove('hidden');
+    document.querySelectorAll('.tab')[0].classList.remove('active');
+    document.querySelectorAll('.tab')[1].classList.add('active');
+  }
+
+  // AUTENTICAÇÃO
+  async function registrar() {
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regSenha').value;
+    const empresa = document.getElementById('regEmpresa').value;
+    const cnpj = document.getElementById('regCnpj').value;
     
-    const supabaseUrl = 'https://dbjawohqwbwqduzglxcf.supabase.co'
-    const supabaseKey = 'sb_publishable_fK5b31w8M-CJCIM9J4T4Gw_F2OlhpTO'
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return alert('Erro: ' + error.message);
+    
+    await supabase.from('empresas').insert({ user_id: data.user.id, nome: empresa, cnpj: cnpj });
+    alert('Conta criada! Confirma teu email e faz login.');
+    mostrarLogin();
+  }
 
-    const form = document.querySelector('form')
-    const input = document.querySelector('input')
-    const lista = document.querySelector('#lista')
+  async function login() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginSenha').value;
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return alert('Erro: ' + error.message);
+    entrarNoSistema(data.user.id);
+  }
 
-    async function carregarItens() {
-      .select('*').order('created_at', { ascending: false })
-      if (error) alert('ERRO AO CARREGAR: ' + error.message)
-      lista.innerHTML = ''
-      data?.forEach(item => {
-      lista.innerHTML += `<div>${item.text}</div>`
-      })
-    }
+  async function logout() {
+    await supabase.auth.signOut();
+    location.reload();
+  }
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault()
-      const nome = input.value
-      const { error } = await supabase.from('items').insert({ text: nome })
-      if (error) alert('ERRO AO ADICIONAR: ' + error.message)
-      input.value = ''
-      carregarItens()
-    })
+  async function entrarNoSistema(userId) {
+    const { data } = await supabase.from('empresas').select().eq('user_id', userId).single();
+    document.getElementById('authCard').classList.add('hidden');
+    document.getElementById('catCard').classList.remove('hidden');
+    document.getElementById('empresaNome').innerText = data?.nome || '';
+    document.getElementById('razao_social').value = data?.nome || '';
+    document.getElementById('cnpj').value = data?.cnpj || '';
+  }
 
-    carregarItens()
-  </script>
+  // SALVAR CAT
+  async function salvarCAT() {
+    const { data: { user } } = await supabase.auth.getUser();
+    const cat = {
+      user_id: user.id,
+      razao_social: document.getElementById('razao_social').value,
+      cnpj: document.getElementById('cnpj').value,
+      nome_acidentado: document.getElementById('nome_acidentado').value,
+      cpf: document.getElementById('cpf').value,
+      nascimento: document.getElementById('nascimento').value,
+      sexo: document.getElementById('sexo').value,
+      data_acidente: document.getElementById('data_acidente').value,
+      hora_acidente: document.getElementById('hora_acidente').value,
+      local_acidente: document.getElementById('local_acidente').value,
+      descricao: document.getElementById('descricao').value,
+      cid: document.getElementById('cid').value,
+      afastamento: document.getElementById('afastamento').value
+    };
+    const { error } = await supabase.from('cats').insert(cat);
+    if (error) return alert('Erro ao salvar: ' + error.message);
+    alert('CAT salva no banco com sucesso!');
+  }
+
+  // GERAR PDF
+  function gerarPDFCAT() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("COMUNICAÇÃO DE ACIDENTE DE TRABALHO - CAT", 105, 15, null, "center");
+    doc.setFontSize(10);
+    let y = 30;
+    const addLine = (label, value) => { doc.text(`${label}: ${value || ''}`, 15, y); y += 7; };
+    
+    doc.text("1. EMPREGADOR", 15, y); y += 7;
+    addLine("Razão Social", document.getElementById('razao_social').value);
+    addLine("CNPJ", document.getElementById('cnpj').value); y += 3;
+    
+    doc.text("2. ACIDENTADO", 15, y); y += 7;
+    addLine("Nome", document.getElementById('nome_acidentado').value);
+    addLine("CPF", document.getElementById('cpf').value);
+    addLine("Nascimento", document.getElementById('nascimento').value); y += 3;
+    
+    doc.text("3. ACIDENTE", 15, y); y += 7;
+    addLine("Data/Hora", document.getElementById('data_acidente').value + ' ' + document.getElementById('hora_acidente').value);
+    addLine("Local", document.getElementById('local_acidente').value);
+    addLine("Descrição", document.getElementById('descricao').value); y += 3;
+    
+    doc.text("4. MÉDICO", 15, y); y += 7;
+    addLine("CID-10", document.getElementById('cid').value);
+    addLine("Afastamento", document.getElementById('afastamento').value);
+    
+    doc.save('CAT.pdf');
+  }
+
+  // CHECA SE JÁ TÁ LOGADO
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) entrarNoSistema(session.user.id);
+  });
+</script>
+
 </body>
 </html>

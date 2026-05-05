@@ -6,6 +6,11 @@
   <title>CAT Eletrônico - Comunicação de Acidente de Trabalho</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  
   <style>
     * { margin:0; padding:0; box-sizing:border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     body { background:#0f0f0f; color:#fff; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
@@ -116,121 +121,147 @@
 </div>
 
 <script>
-  // TROCA PELAS TUAS CHAVES DO SUPABASE
-  const SUPABASE_URL = 'https://oqletjcvbqvyytxqunir.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xbGV0amN2YnF2eXl0eHF1bmlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNzkxNzYsImV4cCI6MjA2MTc1NTE3Nn0.VlRvhDr9UQw5DKVqMA8sqzGs3qVI4RhpOiWfFhHJp_4';
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// CONFIG FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyCPx8x3DrPZLm8LMseJgxsQp2DPzUC3T28",
+  authDomain: "cat-eletronico.firebaseapp.com",
+  projectId: "cat-eletronico",
+  storageBucket: "cat-eletronico.firebasestorage.app",
+  messagingSenderId: "81624904556",
+  appId: "1:81624904556:web:ab57c98e6663beb0073949"
+};
 
-  // CONTROLE DE TELAS
-  function mostrarLogin() {
-    document.getElementById('loginForm').classList.remove('hidden');
-    document.getElementById('registroForm').classList.add('hidden');
-    document.querySelectorAll('.tab')[0].classList.add('active');
-    document.querySelectorAll('.tab')[1].classList.remove('active');
-  }
-  function mostrarRegistro() {
-    document.getElementById('loginForm').classList.add('hidden');
-    document.getElementById('registroForm').classList.remove('hidden');
-    document.querySelectorAll('.tab')[0].classList.remove('active');
-    document.querySelectorAll('.tab')[1].classList.add('active');
-  }
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-  // AUTENTICAÇÃO
-  async function registrar() {
-    const email = document.getElementById('regEmail').value;
-    const password = document.getElementById('regSenha').value;
-    const empresa = document.getElementById('regEmpresa').value;
-    const cnpj = document.getElementById('regCnpj').value;
-    
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) return alert('Erro: ' + error.message);
-    
-    await supabase.from('empresas').insert({ user_id: data.user.id, nome: empresa, cnpj: cnpj });
-    alert('Conta criada! Confirma teu email e faz login.');
+// CONTROLE DE TELAS
+function mostrarLogin() {
+  document.getElementById('loginForm').classList.remove('hidden');
+  document.getElementById('registroForm').classList.add('hidden');
+  document.querySelectorAll('.tab')[0].classList.add('active');
+  document.querySelectorAll('.tab')[1].classList.remove('active');
+}
+
+function mostrarRegistro() {
+  document.getElementById('loginForm').classList.add('hidden');
+  document.getElementById('registroForm').classList.remove('hidden');
+  document.querySelectorAll('.tab')[1].classList.add('active');
+  document.querySelectorAll('.tab')[0].classList.remove('active');
+}
+
+// AUTENTICAÇÃO
+async function registrar() {
+  const email = document.getElementById('regEmail').value;
+  const password = document.getElementById('regSenha').value;
+  const empresa = document.getElementById('regEmpresa').value;
+  const cnpj = document.getElementById('regCnpj').value;
+
+  try {
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    await db.collection('empresas').doc(userCredential.user.uid).set({
+      nome: empresa, cnpj: cnpj, email: email
+    });
+    alert('Conta criada! Já pode fazer login.');
     mostrarLogin();
+  } catch (error) {
+    alert('Erro: ' + error.message);
   }
+}
 
-  async function login() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginSenha').value;
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return alert('Erro: ' + error.message);
-    entrarNoSistema(data.user.id);
+async function login() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginSenha').value;
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+    entrarNoSistema();
+  } catch (error) {
+    alert('Erro: ' + error.message);
   }
+}
 
-  async function logout() {
-    await supabase.auth.signOut();
-    location.reload();
-  }
+async function logout() {
+  await auth.signOut();
+  location.reload();
+}
 
-  async function entrarNoSistema(userId) {
-    const { data } = await supabase.from('empresas').select().eq('user_id', userId).single();
+async function entrarNoSistema() {
+  const user = auth.currentUser;
+  if (user) {
+    const doc = await db.collection('empresas').doc(user.uid).get();
+    const data = doc.data();
     document.getElementById('authCard').classList.add('hidden');
     document.getElementById('catCard').classList.remove('hidden');
-    document.getElementById('empresaNome').innerText = data?.nome || '';
     document.getElementById('razao_social').value = data?.nome || '';
     document.getElementById('cnpj').value = data?.cnpj || '';
   }
+}
 
-  // SALVAR CAT
-  async function salvarCAT() {
-    const { data: { user } } = await supabase.auth.getUser();
-    const cat = {
-      user_id: user.id,
-      razao_social: document.getElementById('razao_social').value,
-      cnpj: document.getElementById('cnpj').value,
-      nome_acidentado: document.getElementById('nome_acidentado').value,
-      cpf: document.getElementById('cpf').value,
-      nascimento: document.getElementById('nascimento').value,
-      sexo: document.getElementById('sexo').value,
-      data_acidente: document.getElementById('data_acidente').value,
-      hora_acidente: document.getElementById('hora_acidente').value,
-      local_acidente: document.getElementById('local_acidente').value,
-      descricao: document.getElementById('descricao').value,
-      cid: document.getElementById('cid').value,
-      afastamento: document.getElementById('afastamento').value
-    };
-    const { error } = await supabase.from('cats').insert(cat);
-    if (error) return alert('Erro ao salvar: ' + error.message);
+auth.onAuthStateChanged((user) => {
+  if (user) entrarNoSistema();
+});
+
+// SALVAR CAT
+async function salvarCAT() {
+  const user = auth.currentUser;
+  if (!user) return alert('Faça login primeiro');
+
+  const cat = {
+    user_id: user.uid,
+    razao_social: document.getElementById('razao_social').value,
+    cnpj: document.getElementById('cnpj').value,
+    nome_acidentado: document.getElementById('nome_acidentado').value,
+    cpf: document.getElementById('cpf').value,
+    nascimento: document.getElementById('nascimento').value,
+    sexo: document.getElementById('sexo').value,
+    data_acidente: document.getElementById('data_acidente').value,
+    hora_acidente: document.getElementById('hora_acidente').value,
+    local_acidente: document.getElementById('local_acidente').value,
+    descricao: document.getElementById('descricao').value,
+    cid: document.getElementById('cid').value,
+    afastamento: document.getElementById('afastamento').value,
+    criado_em: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  try {
+    await db.collection('cats').add(cat);
     alert('CAT salva no banco com sucesso!');
+  } catch (error) {
+    alert('Erro ao salvar: ' + error.message);
   }
+}
 
-  // GERAR PDF
-  function gerarPDFCAT() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("COMUNICAÇÃO DE ACIDENTE DE TRABALHO - CAT", 105, 15, null, "center");
-    doc.setFontSize(10);
-    let y = 30;
-    const addLine = (label, value) => { doc.text(`${label}: ${value || ''}`, 15, y); y += 7; };
-    
-    doc.text("1. EMPREGADOR", 15, y); y += 7;
-    addLine("Razão Social", document.getElementById('razao_social').value);
-    addLine("CNPJ", document.getElementById('cnpj').value); y += 3;
-    
-    doc.text("2. ACIDENTADO", 15, y); y += 7;
-    addLine("Nome", document.getElementById('nome_acidentado').value);
-    addLine("CPF", document.getElementById('cpf').value);
-    addLine("Nascimento", document.getElementById('nascimento').value); y += 3;
-    
-    doc.text("3. ACIDENTE", 15, y); y += 7;
-    addLine("Data/Hora", document.getElementById('data_acidente').value + ' ' + document.getElementById('hora_acidente').value);
-    addLine("Local", document.getElementById('local_acidente').value);
-    addLine("Descrição", document.getElementById('descricao').value); y += 3;
-    
-    doc.text("4. MÉDICO", 15, y); y += 7;
-    addLine("CID-10", document.getElementById('cid').value);
-    addLine("Afastamento", document.getElementById('afastamento').value);
-    
-    doc.save('CAT.pdf');
-  }
+// GERAR PDF
+function gerarPDFCAT() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text('COMUNICAÇÃO DE ACIDENTE DE TRABALHO - CAT', 105, 15, null, 'center');
+  doc.setFontSize(12);
+  let y = 30;
+  const addLine = (label, value) => { doc.text(`${label} ${value || ''}`, 15, y); y += 7; };
 
-  // CHECA SE JÁ TÁ LOGADO
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session) entrarNoSistema(session.user.id);
-  });
+  doc.text('1. EMPREGADOR', 15, y); y += 7;
+  addLine('Razão Social:', document.getElementById('razao_social').value);
+  addLine('CNPJ:', document.getElementById('cnpj').value); y += 3;
+
+  doc.text('2. ACIDENTADO', 15, y); y += 7;
+  addLine('Nome:', document.getElementById('nome_acidentado').value);
+  addLine('CPF:', document.getElementById('cpf').value);
+  addLine('Nascimento:', document.getElementById('nascimento').value); y += 3;
+
+  doc.text('3. ACIDENTE', 15, y); y += 7;
+  addLine('Data/Hora:', document.getElementById('data_acidente').value + ' ' + document.getElementById('hora_acidente').value);
+  addLine('Local:', document.getElementById('local_acidente').value);
+  addLine('Descrição:',
+    addLine('Descrição:', document.getElementById('descricao').value); y += 3;
+
+  doc.text('4. MÉDICO', 15, y); y += 7;
+  addLine('CID 10:', document.getElementById('cid').value);
+  addLine('Afastamento:', document.getElementById('afastamento').value);
+
+  doc.save('cat.pdf');
+}
 </script>
-
 </body>
 </html>

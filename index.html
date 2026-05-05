@@ -1,280 +1,222 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CAT Eletrônico - Comunicação de Acidente de Trabalho</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAO5B0FkWv3N0A7QwVtS7YynWOUu6HxIYA",
-    authDomain: "cat-electronico-48140.firebaseapp.com",
-    projectId: "cat-electronico-48140",
-    storageBucket: "cat-electronico-48140.firebasestorage.app",
-    messagingSenderId: "305548744010",
-    appId: "1:305548744010:web:7005c4cce3378dce4a24e2"
-  };
-  
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-</script>
-  
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    body { background:#0f0f0f; color:#fff; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
-   .card { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:16px; padding:32px; width:100%; max-width:480px; }
-   .header { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
-   .icon { background:#ff6b00; padding:8px; border-radius:8px; }
-    h1 { font-size:18px; font-weight:700; letter-spacing:1px; }
-   .subtitle { font-size:11px; color:#888; margin-top:2px; }
-   .tabs { display:flex; background:#0f0f0f; border-radius:8px; padding:4px; margin-bottom:24px; }
-   .tab { flex:1; padding:10px; border:none; background:transparent; color:#888; border-radius:6px; font-weight:600; cursor:pointer; }
-   .tab.active { background:#2d88ff; color:#fff; }
-    input, select, textarea { width:100%; background:#0f0f0f; border:1px solid #2a2a2a; border-radius:8px; padding:12px; color:#fff; margin-bottom:12px; font-size:14px; }
-    label { font-size:12px; color:#aaa; margin-bottom:6px; display:block; }
-   .btn { width:100%; padding:14px; border:none; border-radius:8px; font-weight:700; cursor:pointer; margin-top:8px; }
-   .btn-primary { background:linear-gradient(90deg,#ff9500,#ff6b00); color:#000; }
-   .btn-secondary { background:#2d88ff; color:#fff; }
-   .form-group { margin-bottom:16px; }
-   .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-   .hidden { display:none; }
-    h3 { font-size:14px; margin:20px 0 12px; color:#ff6b00; }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CAT Eletrónico</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+:root{--bg:#050810;--bg2:#080c10;--bg3:#0d1520;--border:#1e2530;--text:#dce6f0;--muted:#5a7a99;--dim:#3a4455;--cyan:#00c4ff;--orange:#f0a500;--orange2:#ff5e00;--green:#3fb950;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{min-height:100vh;background:var(--bg);font-family:'IBM Plex Mono',monospace;color:var(--text);-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.topbar-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--orange),var(--orange2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.topbar-title{font-weight:700;font-size:12px;letter-spacing:2px;}
+.topbar-sub{font-size:9px;color:var(--dim);letter-spacing:1px;margin-top:2px;}
+.topbar-badge{font-size:9px;color:var(--dim);letter-spacing:1px;}
+.topbar-badge.ready{color:var(--green);}
+.progress-track{height:2px;background:var(--border);}
+.progress-fill{height:100%;background:linear-gradient(90deg,#0080aa,var(--cyan));transition:width 0.4s ease;}
+.stepnav{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;}
+.stepnav::-webkit-scrollbar{display:none;}
+.step-btn{background:none;border:none;border-bottom:2px solid transparent;padding:10px 14px;cursor:pointer;font-family:inherit;font-size:10px;font-weight:500;color:var(--dim);display:flex;align-items:center;gap:6px;white-space:nowrap;transition:all 0.15s;}
+.step-btn.active{color:var(--cyan);border-bottom-color:var(--cyan);font-weight:700;}
+.step-btn.done{color:var(--muted);}
+.step-dot{width:16px;height:16px;border-radius:50%;background:var(--border);color:var(--dim);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;flex-shrink:0;transition:all 0.15s;}
+.step-btn.active .step-dot{background:var(--cyan);color:#000;}
+.step-btn.done .step-dot{background:#1e4d5a;color:var(--cyan);}
+.main{max-width:780px;margin:0 auto;padding:28px 16px 80px;}
+.section-label{font-size:9px;color:var(--cyan);letter-spacing:3px;margin-bottom:6px;}
+.section-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:20px;font-family:'IBM Plex Sans',sans-serif;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px;}
+.grid{display:grid;grid-template-columns:1fr;gap:18px;}
+@media(min-width:540px){.grid{grid-template-columns:1fr 1fr;}}
+.col-2{grid-column:1/-1;}
+.field-label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px;}
+.field-input,.field-textarea,.field-select{width:100%;background:#080c10;border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:inherit;transition:border-color .15s;outline:none;}
+.field-input:focus,.field-textarea:focus,.field-select:focus{border-color:var(--cyan);}
+.field-input::placeholder,.field-textarea::placeholder{color:var(--dim);}
+.field-textarea{resize:none;}
+input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.4);cursor:pointer;}
+.radio-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px;}
+.radio-btn{padding:6px 16px;border-radius:8px;font-size:12px;font-family:inherit;font-weight:600;cursor:pointer;transition:all .15s;background:var(--bg3);color:var(--muted);border:1px solid var(--border);}
+.radio-btn.selected{background:var(--cyan);color:#000;border-color:var(--cyan);}
+.file-drop{border:2px dashed var(--border);border-radius:12px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg2);}
+.file-drop.has-file{border-color:var(--cyan);}
+.file-drop-icon{font-size:28px;margin-bottom:8px;}
+.file-drop-text{color:var(--muted);font-size:13px;}
+.file-drop-sub{color:var(--dim);font-size:11px;margin-top:4px;}
+.file-drop-name{color:var(--cyan);font-size:12px;}
+.file-preview{max-height:140px;border-radius:8px;margin:0 auto 8px;display:block;}
+.review-section{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
+.review-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.review-title{color:var(--cyan);font-weight:700;font-size:11px;letter-spacing:1px;}
+.review-edit-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:inherit;}
+.review-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+@media(max-width:480px){.review-grid{grid-template-columns:1fr;}}
+.review-row{display:flex;gap:6px;font-size:11px;}
+.review-key{color:var(--dim);min-width:120px;flex-shrink:0;}
+.review-val{color:var(--text);word-break:break-word;}
+.review-empty{color:#2a3545;font-style:italic;}
+.nav{display:flex;gap:10px;justify-content:space-between;}
+.btn{border-radius:10px;padding:11px 24px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;border:none;transition:all .2s;display:flex;align-items:center;gap:8px;justify-content:center;}
+.btn-back{background:none;border:1px solid var(--border);color:var(--muted);}
+.btn-next{background:linear-gradient(135deg,#0080aa,var(--cyan));color:#000;}
+.btn-edit{background:none;border:1px solid var(--border);color:var(--muted);white-space:nowrap;}
+.btn-generate{flex:1;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#000;}
+.btn-generate:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;}
+.btn-spinner{width:14px;height:14px;border:2px solid var(--muted);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;}
+.success-banner{background:#061a10;border:1px solid #1a5c30;border-radius:10px;padding:14px 18px;color:var(--green);font-size:12px;display:flex;align-items:flex-start;gap:10px;margin-top:10px;}
+.success-icon{font-size:20px;flex-shrink:0;}
+.success-title{font-weight:700;margin-bottom:2px;}
+.success-sub{font-size:11px;color:#5a9e6f;}
+.hidden{display:none!important;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
 </head>
 <body>
 
-<div class="card" id="authCard">
-  <div class="header">
-    <div class="icon">⚠️</div>
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-icon">⚠</div>
     <div>
-      <h1>CAT ELETRÔNICO</h1>
-      <div class="subtitle">COMUNICAÇÃO DE ACIDENTE DE TRABALHO</div>
+      <div class="topbar-title">CAT ELETRÓNICO</div>
+      <div class="topbar-sub">COMUNICAÇÃO DE ACIDENTE DE TRABALHO</div>
+    </div>
+  </div>
+  <div id="pdfStatus" class="topbar-badge">A carregar...</div>
+</div>
+
+<div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+<div class="stepnav">
+  <button class="step-btn active" onclick="goStep(1)" id="stepBtn1"><span class="step-dot" id="stepDot1">1</span>🏢 Empresa</button>
+  <button class="step-btn" onclick="goStep(2)" id="stepBtn2"><span class="step-dot" id="stepDot2">2</span>👷 Acidentado</button>
+  <button class="step-btn" onclick="goStep(3)" id="stepBtn3"><span class="step-dot" id="stepDot3">3</span>⚠️ Acidente</button>
+  <button class="step-btn" onclick="goStep(4)" id="stepBtn4"><span class="step-dot" id="stepDot4">4</span>📋 Responsáveis</button>
+  <button class="step-btn" onclick="goStep(5)" id="stepBtn5"><span class="step-dot" id="stepDot5">5</span>✅ Revisão</button>
+</div>
+
+<div class="main">
+  <div class="section-label" id="sectionLabel">SECÇÃO 1/5 — EMPRESA</div>
+  <div class="section-title" id="sectionTitle">Dados da Empresa</div>
+
+  <!-- STEP 1 -->
+  <div class="card" id="step1">
+    <div class="grid">
+      <div class="col-2"><label class="field-label">1. Razão Social</label><input class="field-input" id="razao_social" placeholder="Nome da empresa"/></div>
+      <div><label class="field-label">2. NUIT da Empresa</label><input class="field-input" id="nuit_empresa" placeholder="000 000 000"/></div>
+      <div><label class="field-label">3. CBO / CNAE</label><input class="field-input" id="cbo_cnae" placeholder="Ex: 41.20-4-00"/></div>
+      <div class="col-2"><label class="field-label">4. Endereço da Empresa</label><textarea class="field-textarea" id="endereco_empresa" rows="3" placeholder="Rua, número, bairro, cidade, província..."></textarea></div>
+      <div><label class="field-label">5. Telefone da Empresa</label><input class="field-input" id="telefone_empresa" placeholder="+258 00 000 0000"/></div>
     </div>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" onclick="mostrarLogin()">Entrar</button>
-    <button class="tab" onclick="mostrarRegistro()">Registar</button>
+  <!-- STEP 2 -->
+  <div class="card hidden" id="step2">
+    <div class="grid">
+      <div class="col-2"><label class="field-label">6. Nome do Acidentado</label><input class="field-input" id="nome_acidentado" placeholder="Nome completo"/></div>
+      <div><label class="field-label">7. Nº do Funcionário</label><input class="field-input" id="num_funcionario" placeholder="Ex: 00123"/></div>
+      <div><label class="field-label">8. Data de Nascimento</label><input class="field-input" type="date" id="data_nascimento"/></div>
+      <div class="col-2"><label class="field-label">9. Sexo</label><div class="radio-group"><button class="radio-btn" onclick="selectRadio('sexo','Masculino',this)">Masculino</button><button class="radio-btn" onclick="selectRadio('sexo','Feminino',this)">Feminino</button></div></div>
+      <div><label class="field-label">10. NUIT do Trabalhador</label><input class="field-input" id="nuit_trabalhador" placeholder="000 000 000"/></div>
+      <div><label class="field-label">11. Função</label><input class="field-input" id="funcao" placeholder="Ex: Operador de máquinas"/></div>
+      <div><label class="field-label">12. Data de Admissão</label><input class="field-input" type="date" id="data_admissao"/></div>
+      <div><label class="field-label">13. Salário</label><input class="field-input" id="salario" placeholder="Ex: 15.000,00 MZN"/></div>
+    </div>
   </div>
 
-  <div id="loginForm">
-    <label>EMAIL</label>
-    <input type="email" id="loginEmail" placeholder="empresa@email.com">
-    <label>PASSWORD</label>
-    <input type="password" id="loginSenha" placeholder="••••••••">
-    <button class="btn btn-primary" onclick="login()">Entrar →</button>
+  <!-- STEP 3 -->
+  <div class="card hidden" id="step3">
+    <div class="grid">
+      <div><label class="field-label">14. Data do Acidente</label><input class="field-input" type="date" id="data_acidente"/></div>
+      <div><label class="field-label">15. Hora do Acidente</label><input class="field-input" type="time" id="hora_acidente"/></div>
+      <div class="col-2"><label class="field-label">16. Local do Acidente</label><div class="radio-group"><button class="radio-btn" onclick="selectRadio('local_acidente','Estabelecimento',this)">Estabelecimento</button><button class="radio-btn" onclick="selectRadio('local_acidente','Trajeto',this)">Trajeto</button><button class="radio-btn" onclick="selectRadio('local_acidente','Outro',this)">Outro</button></div></div>
+      <div class="col-2"><label class="field-label">17. Descrição do Local</label><textarea class="field-textarea" id="descricao_local" rows="3" placeholder="Descreva o local onde ocorreu o acidente..."></textarea></div>
+      <div class="col-2"><label class="field-label">18. Tipo de Acidente</label><div class="radio-group"><button class="radio-btn" onclick="selectRadio('tipo_acidente','Típico',this)">Típico</button><button class="radio-btn" onclick="selectRadio('tipo_acidente','Trajeto',this)">Trajeto</button><button class="radio-btn" onclick="selectRadio('tipo_acidente','Doença Ocupacional',this)">Doença Ocupacional</button></div></div>
+      <div><label class="field-label">19. Parte do Corpo Atingida</label><input class="field-input" id="parte_corpo" placeholder="Ex: Mão direita, joelho..."/></div>
+      <div><label class="field-label">20. Agente Causador</label><input class="field-input" id="agente_causador" placeholder="Ex: Máquina, produto químico..."/></div>
+      <div><label class="field-label">21. CID-10</label><input class="field-input" id="cid10" placeholder="Ex: S62.0"/></div>
+      <div><label class="field-label">22. Último Dia Trabalhado</label><input class="field-input" type="date" id="ultimo_dia_trabalhado"/></div>
+      <div class="col-2"><label class="field-label">23. Descrição da Ocorrência</label><textarea class="field-textarea" id="descricao_ocorrencia" rows="4" placeholder="Descreva detalhadamente como ocorreu o acidente..."></textarea></div>
+      <div class="col-2"><label class="field-label">24. Houve Afastamento?</label><div class="radio-group"><button class="radio-btn" onclick="selectRadio('houve_afastamento','Sim',this)">Sim</button><button class="radio-btn" onclick="selectRadio('houve_afastamento','Não',this)">Não</button></div></div>
+    </div>
   </div>
 
-  <div id="registroForm" class="hidden">
-    <label>NOME DA EMPRESA</label>
-    <input type="text" id="regEmpresa" placeholder="Empresa LTDA">
-    <label>CNPJ</label>
-    <input type="text" id="regCnpj" placeholder="00.000.000/0000-00">
-    <label>EMAIL</label>
-    <input type="email" id="regEmail" placeholder="empresa@email.com">
-    <label>PASSWORD</label>
-    <input type="password" id="regSenha" placeholder="••••••••">
-    <button class="btn btn-primary" onclick="registrar()">Criar Conta →</button>
+  <!-- STEP 4 -->
+  <div class="card hidden" id="step4">
+    <div class="grid">
+      <div class="col-2"><label class="field-label">25. Testemunha</label><input class="field-input" id="testemunha" placeholder="Nome completo da testemunha"/></div>
+      <div><label class="field-label">26. Supervisor Responsável</label><input class="field-input" id="supervisor" placeholder="Nome do supervisor"/></div>
+      <div><label class="field-label">28. Contacto do Supervisor</label><input class="field-input" id="contacto_supervisor" placeholder="+258 00 000 0000"/></div>
+      <div class="col-2">
+        <label class="field-label">27. Foto / Evidência</label>
+        <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()">
+          <div id="fileEmpty"><div class="file-drop-icon">📎</div><div class="file-drop-text">Toque para anexar foto ou ficheiro</div><div class="file-drop-sub">PNG, JPG — até 10MB</div></div>
+          <div id="filePreview" class="hidden"><img id="fileImg" class="file-preview" alt=""/><div class="file-drop-name" id="fileName"></div><div class="file-drop-sub">Toque para substituir</div></div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFile(this)"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="hidden" id="step5">
+    <div class="review-section"><div class="review-header"><span class="review-title">🏢 Dados da Empresa</span><button class="review-edit-btn" onclick="goStep(1)">Editar</button></div><div class="review-grid" id="review1"></div></div>
+    <div class="review-section"><div class="review-header"><span class="review-title">👷 Dados do Acidentado</span><button class="review-edit-btn" onclick="goStep(2)">Editar</button></div><div class="review-grid" id="review2"></div></div>
+    <div class="review-section"><div class="review-header"><span class="review-title">⚠️ Dados do Acidente</span><button class="review-edit-btn" onclick="goStep(3)">Editar</button></div><div class="review-grid" id="review3"></div></div>
+    <div class="review-section"><div class="review-header"><span class="review-title">📋 Responsáveis</span><button class="review-edit-btn" onclick="goStep(4)">Editar</button></div><div class="review-grid" id="review4"></div></div>
+  </div>
+
+  <div class="nav" id="navNext">
+    <button class="btn btn-back hidden" id="btnBack" onclick="prevStep()">← Anterior</button>
+    <div style="flex:1"></div>
+    <button class="btn btn-next" onclick="nextStep()">Seguinte →</button>
+  </div>
+  <div class="nav hidden" id="navFinish">
+    <button class="btn btn-edit" onclick="goStep(4)">← Editar</button>
+    <button class="btn btn-generate" id="btnGenerate" onclick="generatePDF()">⬇ Gerar PDF</button>
+  </div>
+  <div class="success-banner hidden" id="successBanner">
+    <span class="success-icon">✅</span>
+    <div><div class="success-title">PDF gerado com sucesso!</div><div class="success-sub">O ficheiro foi guardado automaticamente na pasta de Downloads.</div></div>
   </div>
 </div>
 
-<div class="card hidden" id="catCard" style="max-width:700px;">
-  <div class="header">
-    <div class="icon">⚠️</div>
-    <div>
-      <h1>NOVA CAT</h1>
-      <div class="subtitle" id="empresaNome"></div>
-    </div>
-    <button onclick="logout()" style="margin-left:auto; background:#2a2a2a; color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">Sair</button>
-  </div>
-
-  <h3>1. DADOS DO EMPREGADOR</h3>
-  <div class="grid-2">
-    <div><label>Razão Social</label><input id="razao_social"></div>
-    <div><label>CNPJ</label><input id="cnpj"></div>
-  </div>
-
-  <h3>2. DADOS DO ACIDENTADO</h3>
-  <div class="grid-2">
-    <div><label>Nome Completo</label><input id="nome_acidentado"></div>
-    <div><label>CPF</label><input id="cpf"></div>
-  </div>
-  <div class="grid-2">
-    <div><label>Data Nascimento</label><input type="date" id="nascimento"></div>
-    <div><label>Sexo</label>
-      <select id="sexo"><option>Masculino</option><option>Feminino</option></select>
-    </div>
-  </div>
-
-  <h3>3. DADOS DO ACIDENTE</h3>
-  <div class="grid-2">
-    <div><label>Data do Acidente</label><input type="date" id="data_acidente"></div>
-    <div><label>Hora</label><input type="time" id="hora_acidente"></div>
-  </div>
-  <label>Local do Acidente</label>
-  <input id="local_acidente" placeholder="Ex: Galpão 3, Máquina 12">
-  <label>Descrição do Acidente</label>
-  <textarea id="descricao" rows="3" placeholder="Descreva como ocorreu o acidente"></textarea>
-  
-  <h3>4. ATENDIMENTO MÉDICO</h3>
-  <div class="grid-2">
-    <div><label>CID-10</label><input id="cid" placeholder="Ex: S61.0"></div>
-    <div><label>Houve Afastamento?</label>
-      <select id="afastamento"><option>Sim</option><option>Não</option></select>
-    </div>
-  </div>
-
-  <button class="btn btn-secondary" onclick="salvarCAT()">Salvar CAT no Banco</button>
-  <button class="btn btn-primary" onclick="gerarPDFCAT()">Gerar PDF Oficial 📄</button>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" onload="onJsPDFLoad()"></script>
 <script>
-// CONFIG FIREBASE
-const firebaseConfig = {
-  apiKey: "AIzaSyCPx8x3DrPZLm8LMseJgxsQp2DPzUC3T28",
-  authDomain: "cat-eletronico.firebaseapp.com",
-  projectId: "cat-eletronico",
-  storageBucket: "cat-eletronico.firebasestorage.app",
-  messagingSenderId: "81624904556",
-  appId: "1:81624904556:web:ab57c98e6663beb0073949"
-};
-
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-// CONTROLE DE TELAS
-function mostrarLogin() {
-  document.getElementById('loginForm').classList.remove('hidden');
-  document.getElementById('registroForm').classList.add('hidden');
-  document.querySelectorAll('.tab')[0].classList.add('active');
-  document.querySelectorAll('.tab')[1].classList.remove('active');
+let currentStep=1,radioValues={},evidenciaData=null,evidenciaNome='',jspdfReady=false;
+function onJsPDFLoad(){jspdfReady=true;var el=document.getElementById('pdfStatus');el.textContent='● PDF pronto';el.className='topbar-badge ready';}
+function selectRadio(field,value,btn){radioValues[field]=value;btn.parentElement.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}
+function handleFile(input){var file=input.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(e){evidenciaData=e.target.result;evidenciaNome=file.name;document.getElementById('fileEmpty').classList.add('hidden');document.getElementById('filePreview').classList.remove('hidden');document.getElementById('fileDrop').classList.add('has-file');if(evidenciaData.startsWith('data:image')){document.getElementById('fileImg').src=evidenciaData;document.getElementById('fileImg').classList.remove('hidden');}else{document.getElementById('fileImg').classList.add('hidden');}document.getElementById('fileName').textContent='✓ '+file.name;};reader.readAsDataURL(file);}
+var TITLES=['','Dados da Empresa','Dados do Acidentado','Dados do Acidente','Responsáveis & Evidências','Revisão Final'];
+var LABELS=['','EMPRESA','ACIDENTADO','ACIDENTE','RESPONSÁVEIS','REVISÃO'];
+function goStep(n){
+  document.getElementById('step'+currentStep).classList.add('hidden');
+  document.getElementById('stepBtn'+currentStep).classList.remove('active');
+  if(currentStep<n){document.getElementById('stepDot'+currentStep).textContent='✓';document.getElementById('stepBtn'+currentStep).classList.add('done');}
+  currentStep=n;
+  document.getElementById('step'+currentStep).classList.remove('hidden');
+  document.getElementById('stepBtn'+currentStep).classList.add('active');
+  document.getElementById('stepBtn'+currentStep).classList.remove('done');
+  document.getElementById('stepDot'+currentStep).textContent=n<5?n:'✓';
+  document.getElementById('sectionLabel').textContent='SECÇÃO '+n+'/5 — '+LABELS[n];
+  document.getElementById('sectionTitle').textContent=TITLES[n];
+  document.getElementById('progressFill').style.width=(((n-1)/4)*100)+'%';
+  document.getElementById('btnBack').classList.toggle('hidden',n===1);
+  document.getElementById('navNext').classList.toggle('hidden',n===5);
+  document.getElementById('navFinish').classList.toggle('hidden',n!==5);
+  if(n===5)buildReview();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
-
-function mostrarRegistro() {
-  document.getElementById('loginForm').classList.add('hidden');
-  document.getElementById('registroForm').classList.remove('hidden');
-  document.querySelectorAll('.tab')[1].classList.add('active');
-  document.querySelectorAll('.tab')[0].classList.remove('active');
-}
-
-// AUTENTICAÇÃO
-async function registrar() {
-  const email = document.getElementById('regEmail').value;
-  const password = document.getElementById('regSenha').value;
-  const empresa = document.getElementById('regEmpresa').value;
-  const cnpj = document.getElementById('regCnpj').value;
-
-  try {
-    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-    await db.collection('empresas').doc(userCredential.user.uid).set({
-      nome: empresa, cnpj: cnpj, email: email
-    });
-    alert('Conta criada! Já pode fazer login.');
-    mostrarLogin();
-  } catch (error) {
-    alert('Erro: ' + error.message);
-  }
-}
-
-async function login() {
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginSenha').value;
-  try {
-    await auth.signInWithEmailAndPassword(email, password);
-    entrarNoSistema();
-  } catch (error) {
-    alert('Erro: ' + error.message);
-  }
-}
-
-async function logout() {
-  await auth.signOut();
-  location.reload();
-}
-
-async function entrarNoSistema() {
-  const user = auth.currentUser;
-  if (user) {
-    const doc = await db.collection('empresas').doc(user.uid).get();
-    const data = doc.data();
-    document.getElementById('authCard').classList.add('hidden');
-    document.getElementById('catCard').classList.remove('hidden');
-    document.getElementById('razao_social').value = data?.nome || '';
-    document.getElementById('cnpj').value = data?.cnpj || '';
-  }
-}
-
-auth.onAuthStateChanged((user) => {
-  if (user) entrarNoSistema();
-});
-
-// SALVAR CAT
-async function salvarCAT() {
-  const user = auth.currentUser;
-  if (!user) return alert('Faça login primeiro');
-
-  const cat = {
-    user_id: user.uid,
-    razao_social: document.getElementById('razao_social').value,
-    cnpj: document.getElementById('cnpj').value,
-    nome_acidentado: document.getElementById('nome_acidentado').value,
-    cpf: document.getElementById('cpf').value,
-    nascimento: document.getElementById('nascimento').value,
-    sexo: document.getElementById('sexo').value,
-    data_acidente: document.getElementById('data_acidente').value,
-    hora_acidente: document.getElementById('hora_acidente').value,
-    local_acidente: document.getElementById('local_acidente').value,
-    descricao: document.getElementById('descricao').value,
-    cid: document.getElementById('cid').value,
-    afastamento: document.getElementById('afastamento').value,
-    criado_em: firebase.firestore.FieldValue.serverTimestamp()
-  };
-
-  try {
-    await db.collection('cats').add(cat);
-    alert('CAT salva no banco com sucesso!');
-  } catch (error) {
-    alert('Erro ao salvar: ' + error.message);
-  }
-}
-
-// GERAR PDF
-function gerarPDFCAT() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(16);
-  doc.text('COMUNICAÇÃO DE ACIDENTE DE TRABALHO - CAT', 105, 15, null, 'center');
-  doc.setFontSize(12);
-  let y = 30;
-  const addLine = (label, value) => { doc.text(`${label} ${value || ''}`, 15, y); y += 7; };
-
-  doc.text('1. EMPREGADOR', 15, y); y += 7;
-  addLine('Razão Social:', document.getElementById('razao_social').value);
-  addLine('CNPJ:', document.getElementById('cnpj').value); y += 3;
-
-  doc.text('2. ACIDENTADO', 15, y); y += 7;
-  addLine('Nome:', document.getElementById('nome_acidentado').value);
-  addLine('CPF:', document.getElementById('cpf').value);
-  addLine('Nascimento:', document.getElementById('nascimento').value); y += 3;
-
-  doc.text('3. ACIDENTE', 15, y); y += 7;
-  addLine('Data/Hora:', document.getElementById('data_acidente').value + ' ' + document.getElementById('hora_acidente').value);
-  addLine('Local:', document.getElementById('local_acidente').value);
-  addLine('Descrição:',
-    addLine('Descrição:', document.getElementById('descricao').value); y += 3;
-
-  doc.text('4. MÉDICO', 15, y); y += 7;
-  addLine('CID 10:', document.getElementById('cid').value);
-  addLine('Afastamento:', document.getElementById('afastamento').value);
-
-  doc.save('cat.pdf');
-}
-</script>
-</body>
-</html>
+function nextStep(){if(currentStep<5)goStep(currentStep+1);}
+function prevStep(){if(currentStep>1)goStep(currentStep-1);}
+function val(id){return(document.getElementById(id)||{}).value||'';}
+function buildReview(){
+  var sections=[
+    {id:'review1',fields:[['1. Razão Social',val('razao_social')],['2. NUIT Empresa',val('nuit_empresa')],['3. CBO/CNAE',val('cbo_cnae')],['4. Endereço',val('endereco_empresa')],['5. Telefone',val('telefone_empresa')]]},
+    {id:'review2',fields:[['6. Nome',val('nome_acidentado')],['7. Nº Funcionário',val('num_funcionario')],['8. Nascimento',val('data_nascimento')],['9. Sexo',radioValues['sexo']||''],['10. NUIT',val('nuit_trabalhador')],['11. Função',val('funcao')],['12. Admissão',val('data_admissao')],['13. Salário',val('salario')]]},
+    {id:'review3',fields:[['14. Data',val('data_acidente')],['15. Hora',val('hora_acidente')],['16. Local',radioValues['local_acidente']||''],['17. Desc. Local',val('descricao_local')],['18. Tipo',radioValues['tipo_acidente']||''],['19. Parte do Corpo',val('parte_corpo')],['20. Agente Causador',val('agente_causador')],['21. CID-10',val('cid10')],['22. Último Dia',val('ultimo_dia_trabalhado')],['23. Ocorrência',val('descricao_ocorrencia')],['24. Afastamento',radioValues['houve_afastamento']||'']]},
+    {id:'review4',fields:[['25. Testemunha',val('testemunha')],['26. Supervisor',val('supervisor')],['27. Evidência',evidenciaNome||''],['28. Contacto Supervisor',va

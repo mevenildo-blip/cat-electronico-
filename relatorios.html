@@ -1,60 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Admin - Relatórios INTIC</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatórios INTIC - CAT Eletrônico</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
-    button { background: #0066cc; color: white; padding: 12px 24px; border: none; border-radius: 4px; font-size: 16px; }
-    select, input { padding: 8px; margin: 10px 0; width: 200px; }
-  </style>
-</head>
-<body>
-  <h1>Relatório INTIC - Lei 3/2017</h1>
-  <p>Área exclusiva Plano Empresarial 12.000 MT</p>
-  
-  <label>Mês:</label><br>
-  <select id="mes">
-    <option value="01">Janeiro</option>
-    <option value="02">Fevereiro</option>
-    <option value="03">Março</option>
-    <option value="04">Abril</option>
-    <option value="05">Maio</option>
-    <option value="06">Junho</option>
-    <option value="07">Julho</option>
-    <option value="08">Agosto</option>
-    <option value="09">Setembro</option>
-    <option value="10">Outubro</option>
-    <option value="11">Novembro</option>
-    <option value="12">Dezembro</option>
-  </select><br>
-  
-  <label>Ano:</label><br>
-  <input type="number" id="ano" value="2026"><br><br>
-  
-  <button onclick="gerarPDF()">Gerar PDF Lei 3/2017</button>
-
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script>
-    function gerarPDF() {
+    // SENHA PLANO EMPRESARIAL - TROCA DEPOIS
+    const senha = prompt("Área Restrita - Senha do Plano Empresarial:");
+    if (senha !== "INTIC2026") {
+      document.body.innerHTML = "<h1 style='text-align:center;margin-top:100px;font-family:Arial'>Acesso Negado</h1><p style='text-align:center;font-family:Arial'>Plano Empresarial necessário. 12.000 MT/ano<br>Contacte: +258 XX XXX XXXX</p>";
+      throw new Error("Senha incorreta");
+    }
+
+    // TUA CONFIG DO FIREBASE - JÁ PEGUEI DO TEU index.html
+    firebase.initializeApp({
+      apiKey: "AIzaSyCPx8x3DrPZLm8LMseJgxsQp2DPzUC3T28",
+      authDomain: "cat-eletronico.firebaseapp.com",
+      projectId: "cat-eletronico",
+      storageBucket: "cat-eletronico.firebasestorage.app",
+      messagingSenderId: "81624904556",
+      appId: "1:81624904556:web:ab57c98e6663beb0073949"
+    });
+    const db = firebase.firestore();
+
+    async function gerarPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       const mes = document.getElementById('mes').value;
       const ano = document.getElementById('ano').value;
+      const status = document.getElementById('status');
       
-      doc.setFontSize(16);
-      doc.text("RELATÓRIO INTIC - LEI 3/2017", 20, 20);
-      doc.setFontSize(12);
-      doc.text(`Empresa: CAT Eletrônico`, 20, 35);
-      doc.text(`Período: ${mes}/${ano}`, 20, 45);
-      doc.text(`Total de CATs emitidos: [EM BREVE]`, 20, 55);
-      doc.text(`Incidentes de Segurança: Nenhum registrado`, 20, 65);
-      doc.text(`Medidas Técnicas: SSL Vercel, Backup Automático`, 20, 75);
-      doc.text(`Responsável pelo Tratamento: Evenildo`, 20, 85);
-      doc.text(`Data Geração: ${new Date().toLocaleDateString('pt-BR')}`, 20, 95);
+      status.innerText = "Buscando CATs no Firebase...";
+      status.style.color = "#0066cc";
       
-      doc.save(`Relatorio_INTIC_${mes}-${ano}.pdf`);
+      try {
+        // FILTRA POR MÊS USANDO O CAMPO criado_em
+        const inicioMes = new Date(`${ano}-${mes}-01T00:00:00`);
+        const fimMes = new Date(ano, mes, 0, 23, 59, 59);
+        
+        const snap = await db.collection('cats')
+          .where('criado_em', '>=', firebase.firestore.Timestamp.fromDate(inicioMes))
+          .where('criado_em', '<=', firebase.firestore.Timestamp.fromDate(fimMes))
+          .get();
+        
+        const totalCATs = snap.size;
+        
+        // MONTA PDF LEI 3/2017
+        doc.setFontSize(16);
+        doc.text("RELATÓRIO INTIC - LEI 3/2017", 20, 20);
+        doc.setFontSize(12);
+        doc.text(`Sistema: CAT Eletrônico`, 20, 35);
+        doc.text(`Período: ${mes}/${ano}`, 20, 45);
+        doc.text(`Total de CATs emitidos: ${totalCATs}`, 20, 55);
+        doc.text(`Incidentes de Segurança: Nenhum registrado`, 20, 65);
+        doc.text(`Medidas Técnicas: SSL Vercel, Backup Firebase, Firestore Rules`, 20, 75);
+        doc.text(`Responsável pelo Tratamento: Evenildo`, 20, 85);
+        doc.text(`Data Geração: ${new Date().toLocaleDateString('pt-BR')}`, 20, 95);
+        doc.line(20, 115, 120, 115);
+        doc.text(`Assinatura Digital do Responsável`, 20, 122);
+        
+        doc.save(`Relatorio_INTIC_${mes}-${ano}.pdf`);
+        status.innerText = `✓ PDF gerado! Total: ${totalCATs} CATs encontrados`;
+        status.style.color = "#28a745";
+        
+      } catch (error) {
+        status.innerText = `Erro: ${error.message}`;
+        status.style.color = "#dc3545";
+        console.log(error);
+      }
     }
   </script>
-</body>
-</html>
+  <style>
+    * { margin

@@ -9,15 +9,14 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script>
-    const firebaseConfig = {
+    firebase.initializeApp({
       apiKey: "AIzaSyCPx8x3DrPZLm8LMseJgxsQp2DPzUC3T28",
       authDomain: "cat-eletronico.firebaseapp.com",
       projectId: "cat-eletronico",
       storageBucket: "cat-eletronico.firebasestorage.app",
       messagingSenderId: "81624904556",
       appId: "1:81624904556:web:ab57c98e6663beb0073949"
-    };
-    firebase.initializeApp(firebaseConfig);
+    });
     const auth = firebase.auth();
     const db = firebase.firestore();
   </script>
@@ -53,8 +52,10 @@
     @keyframes spin { to { transform:rotate(360deg); } }
     .sair-btn { margin-left:auto; background:#2a2a2a; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:12px; }
     .cat-item { background:#0f0f0f; border:1px solid #2a2a2a; border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+    .cat-num { font-size:10px; color:#ff6b00; font-weight:700; margin-bottom:3px; }
     .cat-item-nome { font-size:13px; font-weight:600; }
     .cat-item-meta { font-size:10px; color:#888; margin-top:3px; }
+    .cat-item-data { font-size:10px; color:#555; margin-top:2px; }
   </style>
 </head>
 <body>
@@ -68,21 +69,16 @@
       <div class="subtitle">COMUNICAÇÃO DE ACIDENTE DE TRABALHO</div>
     </div>
   </div>
-
   <div class="tabs">
     <button class="tab active" onclick="mostrarLogin()">Entrar</button>
     <button class="tab" onclick="mostrarRegistro()">Registar</button>
   </div>
-
-  <!-- LOGIN -->
   <div id="loginForm">
     <div class="alert alert-err" id="errLogin"></div>
     <div class="form-group"><label>EMAIL</label><input type="email" id="loginEmail" placeholder="empresa@email.com"/></div>
     <div class="form-group"><label>PASSWORD</label><input type="password" id="loginSenha" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"/></div>
     <button class="btn btn-primary" id="btnLogin" onclick="login()">Entrar →</button>
   </div>
-
-  <!-- REGISTO -->
   <div id="registroForm" style="display:none;">
     <div class="alert alert-err" id="errReg"></div>
     <div class="alert alert-ok" id="okReg"></div>
@@ -172,17 +168,23 @@ function mostrarLogin() {
   document.querySelectorAll('.tab')[0].classList.add('active');
   document.querySelectorAll('.tab')[1].classList.remove('active');
 }
-
 function mostrarRegistro() {
   document.getElementById('loginForm').style.display = 'none';
   document.getElementById('registroForm').style.display = 'block';
   document.querySelectorAll('.tab')[1].classList.add('active');
   document.querySelectorAll('.tab')[0].classList.remove('active');
 }
-
 function showAlert(id, msg) { var e=document.getElementById(id); e.textContent=msg; e.classList.add('show'); }
 function hideAlert(id) { document.getElementById(id).classList.remove('show'); }
 function v(id) { var el=document.getElementById(id); return el ? el.value : ''; }
+
+// Gera número sequencial do CAT
+async function gerarNumeroCat(uid) {
+  var snap = await db.collection('cats').where('user_id','==',uid).get();
+  var seq = String(snap.size + 1).padStart(4,'0');
+  var ano = new Date().getFullYear();
+  return 'CAT-' + ano + '-' + seq;
+}
 
 async function registrar() {
   hideAlert('errReg'); hideAlert('okReg');
@@ -217,7 +219,7 @@ async function login() {
   try {
     await auth.signInWithEmailAndPassword(email,pass);
   } catch(e) {
-    var msg = (e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')
+    var msg=(e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')
       ? 'Email ou password incorretos.' : e.message;
     showAlert('errLogin', msg);
     btn.disabled=false; btn.innerHTML='Entrar →';
@@ -248,8 +250,13 @@ auth.onAuthStateChanged(async function(user) {
 
 async function salvarCAT() {
   var user=auth.currentUser; if(!user) return;
+  var catNum = await gerarNumeroCat(user.uid);
+  var dataAbertura = new Date().toLocaleDateString('pt-PT');
   var cat={
-    user_id:user.uid, razao_social:v('razao_social'), cnpj:v('cnpj'),
+    user_id:user.uid,
+    cat_num: catNum,
+    data_abertura: dataAbertura,
+    razao_social:v('razao_social'), cnpj:v('cnpj'),
     endereco:v('endereco'), telefone:v('telefone'),
     nome_acidentado:v('nome_acidentado'), num_func:v('num_func'),
     cpf:v('cpf'), nascimento:v('nascimento'), sexo:v('sexo'), funcao:v('funcao'),
@@ -263,7 +270,7 @@ async function salvarCAT() {
   };
   try {
     await db.collection('cats').add(cat);
-    showAlert('okCat','✓ CAT guardado com sucesso!');
+    showAlert('okCat','✓ CAT '+catNum+' guardado com sucesso!');
     carregarHistorico(user.uid);
   } catch(e){ showAlert('errCat','Erro: '+e.message); }
 }
@@ -276,18 +283,25 @@ async function carregarHistorico(uid) {
     el.innerHTML=snap.docs.map(function(d){
       var c=d.data();
       var af=c.afastamento==='Sim'?'🔴 Com afastamento':'🟢 Sem afastamento';
-      return '<div class="cat-item"><div class="cat-item-nome">'+(c.nome_acidentado||'—')+'</div>'+
-        '<div class="cat-item-meta">'+(c.data_acidente||'—')+' · '+(c.tipo_acidente||'—')+' · '+af+'</div></div>';
+      return '<div class="cat-item">'+
+        '<div class="cat-num">'+(c.cat_num||'—')+'</div>'+
+        '<div class="cat-item-nome">'+(c.nome_acidentado||'—')+'</div>'+
+        '<div class="cat-item-meta">'+(c.data_acidente||'—')+' · '+(c.tipo_acidente||'—')+' · '+af+'</div>'+
+        '<div class="cat-item-data">Aberto em: '+(c.data_abertura||'—')+'</div>'+
+        '</div>';
     }).join('');
   } catch(e){ el.innerHTML='<div style="color:#555;font-size:12px;padding:10px;">Erro ao carregar histórico.</div>'; }
 }
 
-function gerarPDFCAT() {
+async function gerarPDFCAT() {
   var jsPDF=window.jspdf.jsPDF;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   var PW=210,ML=14,CW=182,y=14;
   var today=new Date().toLocaleDateString('pt-PT');
-  var catNum='CAT-'+Date.now().toString().slice(-8);
+  var user=auth.currentUser;
+  var snap=user ? await db.collection('cats').where('user_id','==',user.uid).get() : {size:0};
+  var seq=String(snap.size+1).padStart(4,'0');
+  var catNum='CAT-'+new Date().getFullYear()+'-'+seq;
   var sf=function(st,sz,c){doc.setFont('helvetica',st);doc.setFontSize(sz);doc.setTextColor.apply(doc,c||[17,17,17]);};
   var wrap=function(t,w){return doc.splitTextToSize(String(t||'—'),w);};
   var chk=function(n){if(y+(n||20)>280){doc.addPage();y=14;}};

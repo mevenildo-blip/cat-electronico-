@@ -32,7 +32,7 @@
       msg.innerText = 'Buscando dados no Firebase...';
       
       try {
-        const snap = await db.collection('cats').orderBy('dataCriacao', 'desc').get();
+        const snap = await db.collection('cats').get();
         const cats = [];
         snap.forEach(doc => cats.push(doc.data()));
         

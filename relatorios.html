@@ -7,7 +7,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 </head>
 <body style="background:#0f0f0f;color:#fff;font-family:Arial;padding:40px;text-align:center;">
   <h1>TESTE RELATÓRIO INTIC</h1>
@@ -15,14 +14,10 @@
   <button onclick="testarFirebase()" style="padding:14px 30px;background:#ff6b00;border:none;border-radius:8px;font-weight:700;cursor:pointer;">TESTAR CONEXÃO</button>
 
   <script>
-    // TUA CONFIG DO FIREBASE
     firebase.initializeApp({
       apiKey: "AIzaSyCPx8x3DrPZLm8LMseJgxsQp2DPzUC3T28",
       authDomain: "cat-eletronico.firebaseapp.com",
-      projectId: "cat-eletronico",
-      storageBucket: "cat-eletronico.firebasestorage.app",
-      messagingSenderId: "81624904556",
-      appId: "1:81624904556:web:ab57c98e6663beb0073949"
+      projectId: "cat-eletronico"
     });
     const db = firebase.firestore();
     
@@ -36,4 +31,13 @@
       try {
         const snap = await db.collection('cats').get();
         const total = snap.size;
-        status.innerText = `✓ FUNCIONOU
+        status.innerText = `✓ FUNCIONOU! Total de CATs: ${total}`;
+        status.style.color = "#28a745";
+      } catch (error) {
+        status.innerText = `ERRO: ${error.message}`;
+        status.style.color = "#dc3545";
+      }
+    }
+  </script>
+</body>
+</html>

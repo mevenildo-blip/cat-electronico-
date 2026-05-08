@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Relatórios INTIC</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
+    button { background: #0066cc; color: white; padding: 12px 24px; border: none; border-radius: 4px; font-size: 16px; }
+    select, input { padding: 8px; margin: 10px 0; width: 200px; }
+  </style>
+</head>
+<body>
+  <h1>Relatório INTIC - Lei 3/2017</h1>
+  <p>Área exclusiva Plano Empresarial 12.000 MT</p>
+  
+  <label>Mês:</label><br>
+  <select id="mes">
+    <option value="01">Janeiro</option>
+    <option value="02">Fevereiro</option>
+    <option value="03">Março</option>
+    <option value="04">Abril</option>
+    <option value="05">Maio</option>
+    <option value="06">Junho</option>
+    <option value="07">Julho</option>
+    <option value="08">Agosto</option>
+    <option value="09">Setembro</option>
+    <option value="10">Outubro</option>
+    <option value="11">Novembro</option>
+    <option value="12">Dezembro</option>
+  </select><br>
+  
+  <label>Ano:</label><br>
+  <input type="number" id="ano" value="2026"><br><br>
+  
+  <button onclick="gerarPDF()">Gerar PDF Lei 3/2017</button>
+
+  <script>
+    function gerarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const mes = document.getElementById('mes').value;
+      const ano = document.getElementById('ano').value;
+      
+      doc.setFontSize(16);
+      doc.text("RELATÓRIO INTIC - LEI 3/2017", 20, 20);
+      doc.setFontSize(12);
+      doc.text(`Empresa: CAT Eletrônico`, 20, 35);
+      doc.text(`Período: ${mes}/${ano}`, 20, 45);
+      doc.text(`Total de CATs emitidos: [EM BREVE]`, 20, 55);
+      doc.text(`Incidentes de Segurança: Nenhum registrado`, 20, 65);
+      doc.text(`Medidas Técnicas: SSL Vercel, Backup Automático`, 20, 75);
+      doc.text(`Responsável pelo Tratamento: Evenildo`, 20, 85);
+      doc.text(`Data Geração: ${new Date().toLocaleDateString('pt-BR')}`, 20, 95);
+      
+      doc.save(`Relatorio_INTIC_${mes}-${ano}.pdf`);
+    }
+  </script>
+</body>
+</html>

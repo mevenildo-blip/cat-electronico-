@@ -3,15 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teste Relatórios</title>
+  <title>Relatório INTIC</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <style>
+    body{background:#0f0f0f;color:#fff;font-family:Arial;padding:40px;text-align:center}
+    button{padding:15px 30px;background:#ff6b00;border:0;border-radius:8px;font-weight:700;cursor:pointer}
+    #msg{margin:20px;color:#ff6b00;font-size:18px}
+  </style>
 </head>
-<body style="background:#0f0f0f;color:#fff;font-family:Arial;padding:40px;text-align:center;">
-  <h1>TESTE RELATÓRIO INTIC</h1>
-  <p id="status" style="margin:20px;color:#ff6b00;">Conectando no Firebase...</p>
-  <button onclick="testarFirebase()" style="padding:14px 30px;background:#ff6b00;border:none;border-radius:8px;font-weight:700;cursor:pointer;">TESTAR CONEXÃO</button>
+<body>
+  <h1>RELATÓRIO CAT - INTIC</h1>
+  <div id="msg">Clique para gerar o PDF</div>
+  <button onclick="gerarPDF()">GERAR PDF COMPLETO</button>
 
   <script>
     firebase.initializeApp({
@@ -20,22 +25,46 @@
       projectId: "cat-eletronico"
     });
     const db = firebase.firestore();
-    
-    document.getElementById('status').innerText = "Firebase carregado. Clica no botão.";
 
-    async function testarFirebase() {
-      const status = document.getElementById('status');
-      status.innerText = "Buscando CATs...";
-      status.style.color = "#0066cc";
+    async function gerarPDF() {
+      const msg = document.getElementById('msg');
+      msg.style.color = '#0066cc';
+      msg.innerText = 'Buscando dados no Firebase...';
       
       try {
-        const snap = await db.collection('cats').get();
-        const total = snap.size;
-        status.innerText = `✓ FUNCIONOU! Total de CATs: ${total}`;
-        status.style.color = "#28a745";
+        const snap = await db.collection('cats').orderBy('dataCriacao', 'desc').get();
+        const cats = [];
+        snap.forEach(doc => cats.push(doc.data()));
+        
+        msg.innerText = `Gerando PDF com ${cats.length} CATs...`;
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFontSize(16);
+        doc.text('RELATORIO OFICIAL - CAT ELETRONICO INTIC', 20, 20);
+        doc.setFontSize(12);
+        doc.text(`Total de CATs Registrados: ${cats.length}`, 20, 30);
+        doc.text(`Data de Emissao: ${new Date().toLocaleDateString('pt-BR')}`, 20, 38);
+        doc.line(20, 42, 190, 42);
+        
+        let y = 55;
+        cats.forEach((cat, i) => {
+          if (y > 270) { doc.addPage(); y = 20; }
+          doc.setFontSize(11);
+          doc.text(`${i+1}. Numero: ${cat.numeroCAT || 'N/A'}`, 20, y);
+          doc.text(`   Empresa: ${cat.nomeEmpresa || 'N/A'}`, 20, y+6);
+          doc.text(`   Data: ${cat.dataCriacao ? new Date(cat.dataCriacao).toLocaleDateString('pt-BR') : 'N/A'}`, 20, y+12);
+          y += 22;
+        });
+        
+        doc.save(`Relatorio_INTIC_${new Date().toISOString().slice(0,10)}.pdf`);
+        msg.style.color = '#28a745';
+        msg.innerText = `✓ PDF gerado com ${cats.length} CATs!`;
+        
       } catch (error) {
-        status.innerText = `ERRO: ${error.message}`;
-        status.style.color = "#dc3545";
+        msg.style.color = '#dc3545';
+        msg.innerText = `ERRO: ${error.message}`;
       }
     }
   </script>

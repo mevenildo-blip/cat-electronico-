@@ -3,67 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Relatório INTIC</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <title>Relatorio INTIC - CATs</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <style>
-    body{background:#0f0f0f;color:#fff;font-family:Arial;padding:40px;text-align:center}
-    button{padding:15px 30px;background:#ff6b00;border:0;border-radius:8px;font-weight:700;cursor:pointer}
-    #msg{margin:20px;color:#ff6b00;font-size:18px}
+    body{background:#0d1117;color:#c9d1d9;font-family:Arial;padding:40px;text-align:center}
+    button{padding:12px 30px;background:#ff6b00;border:0;border-radius:8px;font-weight:700;cursor:pointer}
+    #msg{margin:20px;color:#ff6b00;font-size:14px}
   </style>
 </head>
 <body>
-  <h1>RELATÓRIO CAT - INTIC</h1>
+  <h1>RELATORIO CAT - INTIC</h1>
   <div id="msg">Clique para gerar o PDF</div>
   <button onclick="gerarPDF()">GERAR PDF COMPLETO</button>
 
   <script>
     firebase.initializeApp({
-      apiKey: "AIzaSyCPx8x3DrPZLm8LMseJgxsQp2DPzUC3T28",
-      authDomain: "cat-eletronico.firebaseapp.com",
-      projectId: "cat-eletronico"
+      apiKey: "AIzaSyD6ceUQ69x4OPG4EidBaUMaiWQPLBCEIT8",
+      authDomain: "cat-electronico.firebaseapp.com",
+      projectId: "cat-electronico"
     });
+
     const db = firebase.firestore();
 
     async function gerarPDF() {
       const msg = document.getElementById('msg');
-      msg.style.color = '#0066cc';
+      msg.style.color = '#ffffff';
       msg.innerText = 'Buscando dados no Firebase...';
-      
+
       try {
         const snap = await db.collection('cats').get();
         const cats = [];
         snap.forEach(doc => cats.push(doc.data()));
-        
+
         msg.innerText = `Gerando PDF com ${cats.length} CATs...`;
-        
+
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        
-        doc.setFontSize(16);
+
+        doc.setFontSize(14);
         doc.text('RELATORIO OFICIAL - CAT ELETRONICO INTIC', 20, 20);
         doc.setFontSize(12);
         doc.text(`Total de CATs Registrados: ${cats.length}`, 20, 30);
-        doc.text(`Data de Emissao: ${new Date().toLocaleDateString('pt-BR')}`, 20, 38);
+        doc.text(`Data de Emissao: ${new Date().toLocaleDateString('pt-BR')}`, 20, 35);
         doc.line(20, 42, 190, 42);
-        
-        let y = 55;
+
+        let y = 50;
         cats.forEach((cat, i) => {
           if (y > 270) { doc.addPage(); y = 20; }
+          
+          // Tenta varios nomes de campo pra garantir
+          const numero = cat.numeroCat || cat.numero || cat.num || 'N/A';
+          const empresa = cat.nomeEmpresa || cat.empresa || cat.razaoSocial || 'N/A';
+          const data = cat.data || cat.dataCriacao || cat.dataEmissao || cat.createdAt;
+          const dataFormatada = data ? new Date(data.seconds ? data.seconds * 1000 : data).toLocaleDateString('pt-BR') : 'N/A';
+
           doc.setFontSize(11);
-          doc.text(`${i+1}. Numero: ${cat.numeroCAT || 'N/A'}`, 20, y);
-          doc.text(`   Empresa: ${cat.nomeEmpresa || 'N/A'}`, 20, y+6);
-          doc.text(`   Data: ${cat.dataCriacao ? new Date(cat.dataCriacao).toLocaleDateString('pt-BR') : 'N/A'}`, 20, y+12);
+          doc.text(`${i+1}. Numero: ${numero}`, 20, y);
+          doc.text(`   Empresa: ${empresa}`, 20, y+6);
+          doc.text(`   Data: ${dataFormatada}`, 20, y+12);
           y += 22;
         });
-        
+
         doc.save(`Relatorio_INTIC_${new Date().toISOString().slice(0,10)}.pdf`);
         msg.style.color = '#28a745';
         msg.innerText = `✓ PDF gerado com ${cats.length} CATs!`;
-        
+
       } catch (error) {
-        msg.style.color = '#dc3545';
+        msg.style.color = '#ff2d54';
         msg.innerText = `ERRO: ${error.message}`;
       }
     }

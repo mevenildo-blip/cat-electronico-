@@ -35,27 +35,34 @@
     input, select, textarea { width:100%; background:#0f0f0f; border:1px solid #2a2a2a; border-radius:8px; padding:12px; color:#fff; font-size:14px; outline:none; transition:border-color .15s; }
     input:focus, select:focus, textarea:focus { border-color:#ff6b00; }
     input::placeholder, textarea::placeholder { color:#555; }
+    select option { background:#1a1a1a; }
     label { font-size:12px; color:#aaa; margin-bottom:6px; display:block; }
     .btn { width:100%; padding:14px; border:none; border-radius:8px; font-weight:700; cursor:pointer; margin-top:8px; font-size:14px; transition:opacity .2s; }
-    .btn:hover { opacity:.9; }
+    .btn:hover:not(:disabled) { opacity:.85; }
+    .btn:disabled { opacity:.6; cursor:not-allowed; }
     .btn-primary { background:linear-gradient(90deg,#ff9500,#ff6b00); color:#000; }
     .btn-secondary { background:#2d88ff; color:#fff; }
     .form-group { margin-bottom:14px; }
     .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
-    .hidden { display:none; }
+    .hidden { display:none !important; }
     h3 { font-size:13px; margin:18px 0 10px; color:#ff6b00; letter-spacing:1px; text-transform:uppercase; }
     .alert { padding:10px 14px; border-radius:8px; font-size:12px; margin-bottom:12px; display:none; }
     .alert.show { display:block; }
     .alert-err { background:#2a0a0a; border:1px solid #5c1a1a; color:#f85149; }
     .alert-ok { background:#0a2a10; border:1px solid #1a5c20; color:#3fb950; }
-    .spinner { display:inline-block; width:14px; height:14px; border:2px solid #555; border-top-color:#ff6b00; border-radius:50%; animation:spin .8s linear infinite; vertical-align:middle; margin-right:6px; }
+    .spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; vertical-align:middle; margin-right:6px; }
+    .btn-primary .spinner { border-top-color:#000; border-color:rgba(0,0,0,0.2); border-top-color:#000; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    .sair-btn { margin-left:auto; background:#2a2a2a; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:12px; }
+    .sair-btn { margin-left:auto; background:#2a2a2a; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:12px; transition:background .2s; }
+    .sair-btn:hover { background:#3a3a3a; }
     .cat-item { background:#0f0f0f; border:1px solid #2a2a2a; border-radius:10px; padding:12px 14px; margin-bottom:8px; }
     .cat-num { font-size:10px; color:#ff6b00; font-weight:700; margin-bottom:3px; }
     .cat-item-nome { font-size:13px; font-weight:600; }
     .cat-item-meta { font-size:10px; color:#888; margin-top:3px; }
     .cat-item-data { font-size:10px; color:#555; margin-top:2px; }
+    .forgot-link { text-align:center; margin-top:10px; }
+    .forgot-link a { color:#888; font-size:12px; cursor:pointer; text-decoration:underline; }
+    .forgot-link a:hover { color:#ff6b00; }
   </style>
 </head>
 <body>
@@ -73,12 +80,26 @@
     <button class="tab active" onclick="mostrarLogin()">Entrar</button>
     <button class="tab" onclick="mostrarRegistro()">Registar</button>
   </div>
+
+  <!-- FORMULÁRIO DE LOGIN -->
   <div id="loginForm">
     <div class="alert alert-err" id="errLogin"></div>
-    <div class="form-group"><label>EMAIL</label><input type="email" id="loginEmail" placeholder="empresa@email.com"/></div>
-    <div class="form-group"><label>PASSWORD</label><input type="password" id="loginSenha" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"/></div>
+    <div class="alert alert-ok" id="okLogin"></div>
+    <div class="form-group">
+      <label>EMAIL</label>
+      <input type="email" id="loginEmail" placeholder="empresa@email.com" onkeydown="if(event.key==='Enter')login()"/>
+    </div>
+    <div class="form-group">
+      <label>PASSWORD</label>
+      <input type="password" id="loginSenha" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"/>
+    </div>
     <button class="btn btn-primary" id="btnLogin" onclick="login()">Entrar →</button>
+    <div class="forgot-link">
+      <a onclick="recuperarSenha()">Esqueci a password</a>
+    </div>
   </div>
+
+  <!-- FORMULÁRIO DE REGISTO -->
   <div id="registroForm" style="display:none;">
     <div class="alert alert-err" id="errReg"></div>
     <div class="alert alert-ok" id="okReg"></div>
@@ -151,8 +172,8 @@
   </div>
 
   <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
-    <button class="btn btn-secondary" style="flex:1;" onclick="salvarCAT()">💾 Guardar</button>
-    <button class="btn btn-primary" style="flex:1;" onclick="gerarPDFCAT()">⬇ Gerar PDF</button>
+    <button class="btn btn-secondary" style="flex:1;" id="btnSalvar" onclick="salvarCAT()">💾 Guardar</button>
+    <button class="btn btn-primary" style="flex:1;" id="btnPDF" onclick="gerarPDFCAT()">⬇ Gerar PDF</button>
   </div>
   <div class="alert alert-err" id="errCat" style="margin-top:10px;"></div>
   <div class="alert alert-ok" id="okCat" style="margin-top:10px;"></div>
@@ -162,190 +183,359 @@
 </div>
 
 <script>
-function mostrarLogin() {
-  document.getElementById('loginForm').style.display = 'block';
-  document.getElementById('registroForm').style.display = 'none';
-  document.querySelectorAll('.tab')[0].classList.add('active');
-  document.querySelectorAll('.tab')[1].classList.remove('active');
-}
-function mostrarRegistro() {
-  document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('registroForm').style.display = 'block';
-  document.querySelectorAll('.tab')[1].classList.add('active');
-  document.querySelectorAll('.tab')[0].classList.remove('active');
-}
-function showAlert(id, msg) { var e=document.getElementById(id); e.textContent=msg; e.classList.add('show'); }
-function hideAlert(id) { document.getElementById(id).classList.remove('show'); }
-function v(id) { var el=document.getElementById(id); return el ? el.value : ''; }
-
-// Gera número sequencial do CAT
-async function gerarNumeroCat(uid) {
-  var snap = await db.collection('cats').where('user_id','==',uid).get();
-  var seq = String(snap.size + 1).padStart(4,'0');
-  var ano = new Date().getFullYear();
-  return 'CAT-' + ano + '-' + seq;
-}
-
-async function registrar() {
-  hideAlert('errReg'); hideAlert('okReg');
-  var email=document.getElementById('regEmail').value.trim();
-  var pass=document.getElementById('regSenha').value;
-  var empresa=document.getElementById('regEmpresa').value.trim();
-  var cnpj=document.getElementById('regCnpj').value.trim();
-  if(!empresa||!email||!pass){ showAlert('errReg','Preenche todos os campos.'); return; }
-  if(pass.length<6){ showAlert('errReg','A password deve ter pelo menos 6 caracteres.'); return; }
-  var btn=document.getElementById('btnReg');
-  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> A criar...';
-  try {
-    var cred=await auth.createUserWithEmailAndPassword(email,pass);
-    await db.collection('empresas').doc(cred.user.uid).set({nome:empresa,cnpj:cnpj,email:email});
-    showAlert('okReg','✓ Conta criada! Podes fazer login.');
-    ['regEmpresa','regCnpj','regEmail','regSenha'].forEach(function(id){ document.getElementById(id).value=''; });
-  } catch(e) {
-    var msg = e.code==='auth/email-already-in-use' ? 'Este email já está registado.' :
-              e.code==='auth/invalid-email' ? 'Email inválido.' : e.message;
-    showAlert('errReg', msg);
+  // ──────────────────────────────────────────────
+  // UTILITÁRIOS
+  // ──────────────────────────────────────────────
+  function mostrarLogin() {
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('registroForm').style.display = 'none';
+    document.querySelectorAll('.tab')[0].classList.add('active');
+    document.querySelectorAll('.tab')[1].classList.remove('active');
   }
-  btn.disabled=false; btn.innerHTML='Criar Conta →';
-}
 
-async function login() {
-  hideAlert('errLogin');
-  var email=document.getElementById('loginEmail').value.trim();
-  var pass=document.getElementById('loginSenha').value;
-  if(!email||!pass){ showAlert('errLogin','Preenche o email e a password.'); return; }
-  var btn=document.getElementById('btnLogin');
-  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> A entrar...';
-  try {
-    await auth.signInWithEmailAndPassword(email,pass);
-  } catch(e) {
-    var msg=(e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')
-      ? 'Email ou password incorretos.' : e.message;
-    showAlert('errLogin', msg);
-    btn.disabled=false; btn.innerHTML='Entrar →';
+  function mostrarRegistro() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registroForm').style.display = 'block';
+    document.querySelectorAll('.tab')[1].classList.add('active');
+    document.querySelectorAll('.tab')[0].classList.remove('active');
   }
-}
 
-async function logout() { await auth.signOut(); }
+  function showAlert(id, msg) {
+    var e = document.getElementById(id);
+    e.textContent = msg;
+    e.classList.add('show');
+  }
 
-auth.onAuthStateChanged(async function(user) {
-  if(user) {
+  function hideAlert(id) {
+    document.getElementById(id).classList.remove('show');
+  }
+
+  function v(id) {
+    var el = document.getElementById(id);
+    return el ? el.value : '';
+  }
+
+  function setBtnLoading(id, loading, textoOriginal, textoLoading) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    btn.disabled = loading;
+    btn.innerHTML = loading
+      ? '<span class="spinner"></span> ' + (textoLoading || 'A processar...')
+      : textoOriginal;
+  }
+
+  // ──────────────────────────────────────────────
+  // AUTENTICAÇÃO
+  // ──────────────────────────────────────────────
+  async function login() {
+    hideAlert('errLogin');
+    hideAlert('okLogin');
+
+    var email = document.getElementById('loginEmail').value.trim();
+    var pass  = document.getElementById('loginSenha').value;
+
+    if (!email || !pass) {
+      showAlert('errLogin', 'Preenche o email e a password.');
+      return;
+    }
+
+    setBtnLoading('btnLogin', true, 'Entrar →', 'A entrar...');
+
     try {
-      var doc=await db.collection('empresas').doc(user.uid).get();
-      var data=doc.data()||{};
-      document.getElementById('authCard').classList.add('hidden');
-      document.getElementById('catCard').classList.remove('hidden');
-      document.getElementById('empresaNome').textContent=data.nome||user.email;
-      document.getElementById('razao_social').value=data.nome||'';
-      document.getElementById('cnpj').value=data.cnpj||'';
-      carregarHistorico(user.uid);
-    } catch(e){ console.error(e); }
-  } else {
-    document.getElementById('authCard').classList.remove('hidden');
-    document.getElementById('catCard').classList.add('hidden');
-    var btn=document.getElementById('btnLogin');
-    btn.disabled=false; btn.innerHTML='Entrar →';
+      await auth.signInWithEmailAndPassword(email, pass);
+      // Sucesso: onAuthStateChanged trata do redirecionamento
+    } catch (e) {
+      var msg;
+      switch (e.code) {
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+        case 'auth/invalid-email':
+          msg = 'Email ou password incorretos.'; break;
+        case 'auth/too-many-requests':
+          msg = 'Muitas tentativas. Aguarda uns minutos e tenta novamente.'; break;
+        case 'auth/network-request-failed':
+          msg = 'Sem ligação à internet. Verifica a tua rede.'; break;
+        default:
+          msg = 'Erro: ' + e.message;
+      }
+      showAlert('errLogin', msg);
+      setBtnLoading('btnLogin', false, 'Entrar →');
+    }
   }
-});
 
-async function salvarCAT() {
-  var user=auth.currentUser; if(!user) return;
-  var catNum = await gerarNumeroCat(user.uid);
-  var dataAbertura = new Date().toLocaleDateString('pt-PT');
-  var cat={
-    user_id:user.uid,
-    cat_num: catNum,
-    data_abertura: dataAbertura,
-    razao_social:v('razao_social'), cnpj:v('cnpj'),
-    endereco:v('endereco'), telefone:v('telefone'),
-    nome_acidentado:v('nome_acidentado'), num_func:v('num_func'),
-    cpf:v('cpf'), nascimento:v('nascimento'), sexo:v('sexo'), funcao:v('funcao'),
-    data_acidente:v('data_acidente'), hora_acidente:v('hora_acidente'),
-    local_tipo:v('local_tipo'), tipo_acidente:v('tipo_acidente'),
-    local_acidente:v('local_acidente'), descricao:v('descricao'),
-    parte_corpo:v('parte_corpo'), agente:v('agente'),
-    cid:v('cid'), afastamento:v('afastamento'), hospital:v('hospital'),
-    testemunha:v('testemunha'), supervisor:v('supervisor'),
-    criado_em:firebase.firestore.FieldValue.serverTimestamp()
-  };
-  try {
-    await db.collection('cats').add(cat);
-    showAlert('okCat','✓ CAT '+catNum+' guardado com sucesso!');
-    carregarHistorico(user.uid);
-  } catch(e){ showAlert('errCat','Erro: '+e.message); }
-}
+  async function registrar() {
+    hideAlert('errReg');
+    hideAlert('okReg');
 
-async function carregarHistorico(uid) {
-  var el=document.getElementById('historicoCats');
-  try {
-    var snap=await db.collection('cats').where('user_id','==',uid).orderBy('criado_em','desc').limit(10).get();
-    if(snap.empty){ el.innerHTML='<div style="color:#555;font-size:12px;text-align:center;padding:16px;">Nenhum CAT registado ainda.</div>'; return; }
-    el.innerHTML=snap.docs.map(function(d){
-      var c=d.data();
-      var af=c.afastamento==='Sim'?'🔴 Com afastamento':'🟢 Sem afastamento';
-      return '<div class="cat-item">'+
-        '<div class="cat-num">'+(c.cat_num||'—')+'</div>'+
-        '<div class="cat-item-nome">'+(c.nome_acidentado||'—')+'</div>'+
-        '<div class="cat-item-meta">'+(c.data_acidente||'—')+' · '+(c.tipo_acidente||'—')+' · '+af+'</div>'+
-        '<div class="cat-item-data">Aberto em: '+(c.data_abertura||'—')+'</div>'+
-        '</div>';
-    }).join('');
-  } catch(e){ el.innerHTML='<div style="color:#555;font-size:12px;padding:10px;">Erro ao carregar histórico.</div>'; }
-}
+    var empresa = document.getElementById('regEmpresa').value.trim();
+    var cnpj    = document.getElementById('regCnpj').value.trim();
+    var email   = document.getElementById('regEmail').value.trim();
+    var pass    = document.getElementById('regSenha').value;
 
-async function gerarPDFCAT() {
-  var jsPDF=window.jspdf.jsPDF;
-  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  var PW=210,ML=14,CW=182,y=14;
-  var today=new Date().toLocaleDateString('pt-PT');
-  var user=auth.currentUser;
-  var snap=user ? await db.collection('cats').where('user_id','==',user.uid).get() : {size:0};
-  var seq=String(snap.size+1).padStart(4,'0');
-  var catNum='CAT-'+new Date().getFullYear()+'-'+seq;
-  var sf=function(st,sz,c){doc.setFont('helvetica',st);doc.setFontSize(sz);doc.setTextColor.apply(doc,c||[17,17,17]);};
-  var wrap=function(t,w){return doc.splitTextToSize(String(t||'—'),w);};
-  var chk=function(n){if(y+(n||20)>280){doc.addPage();y=14;}};
-  var sh=function(t){doc.setFillColor(10,42,74);doc.rect(ML,y,CW,7,'F');sf('bold',9,[255,255,255]);doc.text(t,ML+3,y+5);y+=9;};
-  var fr=function(lbl,val){
-    var lines=wrap(val,CW-52);var rh=Math.max(8,lines.length*5+3);
-    doc.setFillColor(247,250,252);doc.rect(ML,y,CW,rh,'F');
-    doc.setDrawColor(212,220,232);doc.setLineWidth(0.2);doc.rect(ML,y,CW,rh);
-    doc.setFillColor(240,244,248);doc.rect(ML,y,48,rh,'F');
-    sf('bold',8,[51,65,85]);doc.text(lbl,ML+2,y+rh/2+1,{maxWidth:44});
-    sf('normal',8.5,[17,17,17]);doc.text(lines,ML+51,y+5);y+=rh;
-  };
-  doc.setFillColor(10,42,74);doc.rect(0,0,PW,22,'F');
-  doc.setFillColor(240,165,0);doc.rect(0,0,4,22,'F');
-  sf('bold',14,[255,255,255]);doc.text('COMUNICAÇÃO DE ACIDENTE DE TRABALHO',ML+4,10);
-  sf('normal',8,[176,196,216]);doc.text('Formulário Eletrónico Oficial',ML+4,16);
-  sf('bold',10,[240,165,0]);doc.text(catNum,PW-14,9,{align:'right'});
-  sf('normal',8,[176,196,216]);doc.text('Emitido em '+today,PW-14,15,{align:'right'});
-  y=28;
-  sh('1 — DADOS DO EMPREGADOR');
-  fr('Razão Social',v('razao_social'));fr('NUIT / CNPJ',v('cnpj'));fr('Endereço',v('endereco'));fr('Telefone',v('telefone'));y+=4;chk(70);
-  sh('2 — DADOS DO ACIDENTADO');
-  fr('Nome Completo',v('nome_acidentado'));fr('Nº Funcionário',v('num_func'));fr('NUIT / CPF',v('cpf'));fr('Nascimento',v('nascimento'));fr('Sexo',v('sexo'));fr('Função',v('funcao'));y+=4;chk(80);
-  sh('3 — DADOS DO ACIDENTE');
-  fr('Data do Acidente',v('data_acidente'));fr('Hora',v('hora_acidente'));fr('Local (tipo)',v('local_tipo'));fr('Tipo de Acidente',v('tipo_acidente'));fr('Descrição do Local',v('local_acidente'));fr('Descrição da Ocorrência',v('descricao'));fr('Parte do Corpo',v('parte_corpo'));fr('Agente Causador',v('agente'));y+=4;chk(40);
-  sh('4 — ATENDIMENTO MÉDICO');
-  fr('CID-10',v('cid'));fr('Houve Afastamento?',v('afastamento'));fr('Hospital',v('hospital'));y+=4;chk(30);
-  sh('5 — RESPONSÁVEIS');
-  fr('Testemunha',v('testemunha'));fr('Supervisor',v('supervisor'));y+=10;
-  chk(35);
-  doc.setDrawColor(10,42,74);doc.setLineWidth(0.5);doc.line(ML,y,PW-14,y);y+=6;
-  var sw=(CW-12)/3;
-  ['Responsável da Empresa','Trabalhador / Representante','Técnico de SST'].forEach(function(s,i){
-    var sx=ML+i*(sw+6);
-    sf('normal',7.5,[120,120,120]);doc.text(s,sx+sw/2,y,{align:'center'});
-    doc.setDrawColor(180,180,180);doc.setLineWidth(0.3);doc.line(sx,y+16,sx+sw,y+16);
+    if (!empresa || !email || !pass) {
+      showAlert('errReg', 'Preenche todos os campos.');
+      return;
+    }
+    if (pass.length < 6) {
+      showAlert('errReg', 'A password deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    setBtnLoading('btnReg', true, 'Criar Conta →', 'A criar...');
+
+    try {
+      var cred = await auth.createUserWithEmailAndPassword(email, pass);
+      await db.collection('empresas').doc(cred.user.uid).set({
+        nome: empresa, cnpj: cnpj, email: email
+      });
+      showAlert('okReg', '✓ Conta criada com sucesso! Podes fazer login.');
+      ['regEmpresa', 'regCnpj', 'regEmail', 'regSenha'].forEach(function(id) {
+        document.getElementById(id).value = '';
+      });
+    } catch (e) {
+      var msg;
+      switch (e.code) {
+        case 'auth/email-already-in-use':
+          msg = 'Este email já está registado.'; break;
+        case 'auth/invalid-email':
+          msg = 'Email inválido.'; break;
+        case 'auth/network-request-failed':
+          msg = 'Sem ligação à internet. Verifica a tua rede.'; break;
+        default:
+          msg = e.message;
+      }
+      showAlert('errReg', msg);
+    }
+
+    setBtnLoading('btnReg', false, 'Criar Conta →');
+  }
+
+  async function recuperarSenha() {
+    var email = document.getElementById('loginEmail').value.trim();
+    if (!email) {
+      showAlert('errLogin', 'Escreve o teu email no campo acima e clica em "Esqueci a password".');
+      return;
+    }
+    hideAlert('errLogin');
+    try {
+      await auth.sendPasswordResetEmail(email);
+      showAlert('okLogin', '✓ Email de recuperação enviado para ' + email + '. Verifica a caixa de entrada.');
+    } catch (e) {
+      var msg = e.code === 'auth/user-not-found'
+        ? 'Não existe conta com este email.'
+        : 'Erro ao enviar email: ' + e.message;
+      showAlert('errLogin', msg);
+    }
+  }
+
+  async function logout() {
+    await auth.signOut();
+  }
+
+  // ──────────────────────────────────────────────
+  // ESTADO DE AUTENTICAÇÃO
+  // ──────────────────────────────────────────────
+  auth.onAuthStateChanged(async function(user) {
+    if (user) {
+      try {
+        var doc  = await db.collection('empresas').doc(user.uid).get();
+        var data = doc.data() || {};
+        document.getElementById('authCard').classList.add('hidden');
+        document.getElementById('catCard').classList.remove('hidden');
+        document.getElementById('empresaNome').textContent = data.nome || user.email;
+        document.getElementById('razao_social').value = data.nome || '';
+        document.getElementById('cnpj').value = data.cnpj || '';
+        carregarHistorico(user.uid);
+      } catch (e) {
+        console.error('Erro ao carregar dados da empresa:', e);
+      }
+    } else {
+      document.getElementById('authCard').classList.remove('hidden');
+      document.getElementById('catCard').classList.add('hidden');
+      // Repõe o botão de login (garante que nunca fica travado)
+      setBtnLoading('btnLogin', false, 'Entrar →');
+    }
   });
-  var tp=doc.internal.getNumberOfPages();
-  for(var p=1;p<=tp;p++){
-    doc.setPage(p);sf('normal',7,[160,160,160]);
-    doc.text(catNum+' · Gerado em '+today+' · Pág. '+p+'/'+tp,PW/2,291,{align:'center'});
+
+  // ──────────────────────────────────────────────
+  // CAT — GUARDAR E HISTÓRICO
+  // ──────────────────────────────────────────────
+  async function gerarNumeroCat(uid) {
+    var snap = await db.collection('cats').where('user_id', '==', uid).get();
+    var seq  = String(snap.size + 1).padStart(4, '0');
+    var ano  = new Date().getFullYear();
+    return 'CAT-' + ano + '-' + seq;
   }
-  doc.save('CAT_'+(v('nome_acidentado')||'acidentado').replace(/\s+/g,'_')+'_'+(v('data_acidente')||today)+'.pdf');
-}
+
+  async function salvarCAT() {
+    var user = auth.currentUser;
+    if (!user) return;
+
+    hideAlert('errCat');
+    hideAlert('okCat');
+    setBtnLoading('btnSalvar', true, '💾 Guardar', 'A guardar...');
+
+    try {
+      var catNum       = await gerarNumeroCat(user.uid);
+      var dataAbertura = new Date().toLocaleDateString('pt-PT');
+      var cat = {
+        user_id: user.uid,
+        cat_num: catNum,
+        data_abertura: dataAbertura,
+        razao_social: v('razao_social'), cnpj: v('cnpj'),
+        endereco: v('endereco'), telefone: v('telefone'),
+        nome_acidentado: v('nome_acidentado'), num_func: v('num_func'),
+        cpf: v('cpf'), nascimento: v('nascimento'), sexo: v('sexo'), funcao: v('funcao'),
+        data_acidente: v('data_acidente'), hora_acidente: v('hora_acidente'),
+        local_tipo: v('local_tipo'), tipo_acidente: v('tipo_acidente'),
+        local_acidente: v('local_acidente'), descricao: v('descricao'),
+        parte_corpo: v('parte_corpo'), agente: v('agente'),
+        cid: v('cid'), afastamento: v('afastamento'), hospital: v('hospital'),
+        testemunha: v('testemunha'), supervisor: v('supervisor'),
+        criado_em: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      await db.collection('cats').add(cat);
+      showAlert('okCat', '✓ CAT ' + catNum + ' guardado com sucesso!');
+      carregarHistorico(user.uid);
+    } catch (e) {
+      showAlert('errCat', 'Erro ao guardar: ' + e.message);
+    }
+
+    setBtnLoading('btnSalvar', false, '💾 Guardar');
+  }
+
+  async function carregarHistorico(uid) {
+    var el = document.getElementById('historicoCats');
+    try {
+      var snap = await db.collection('cats')
+        .where('user_id', '==', uid)
+        .orderBy('criado_em', 'desc')
+        .limit(10)
+        .get();
+
+      if (snap.empty) {
+        el.innerHTML = '<div style="color:#555;font-size:12px;text-align:center;padding:16px;">Nenhum CAT registado ainda.</div>';
+        return;
+      }
+
+      el.innerHTML = snap.docs.map(function(d) {
+        var c  = d.data();
+        var af = c.afastamento === 'Sim' ? '🔴 Com afastamento' : '🟢 Sem afastamento';
+        return '<div class="cat-item">' +
+          '<div class="cat-num">' + (c.cat_num || '—') + '</div>' +
+          '<div class="cat-item-nome">' + (c.nome_acidentado || '—') + '</div>' +
+          '<div class="cat-item-meta">' + (c.data_acidente || '—') + ' · ' + (c.tipo_acidente || '—') + ' · ' + af + '</div>' +
+          '<div class="cat-item-data">Aberto em: ' + (c.data_abertura || '—') + '</div>' +
+          '</div>';
+      }).join('');
+    } catch (e) {
+      el.innerHTML = '<div style="color:#f85149;font-size:12px;padding:10px;">Erro ao carregar histórico: ' + e.message + '</div>';
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  // GERAÇÃO DE PDF
+  // ──────────────────────────────────────────────
+  async function gerarPDFCAT() {
+    hideAlert('errCat');
+    setBtnLoading('btnPDF', true, '⬇ Gerar PDF', 'A gerar PDF...');
+
+    try {
+      var jsPDF = window.jspdf.jsPDF;
+      var doc   = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+      var PW = 210, ML = 14, CW = 182, y = 14;
+      var today = new Date().toLocaleDateString('pt-PT');
+      var user  = auth.currentUser;
+      var snap  = user ? await db.collection('cats').where('user_id','==',user.uid).get() : { size: 0 };
+      var seq   = String(snap.size + 1).padStart(4, '0');
+      var catNum = 'CAT-' + new Date().getFullYear() + '-' + seq;
+
+      var sf = function(st, sz, c) {
+        doc.setFont('helvetica', st);
+        doc.setFontSize(sz);
+        doc.setTextColor.apply(doc, c || [17,17,17]);
+      };
+      var wrap = function(t, w) { return doc.splitTextToSize(String(t || '—'), w); };
+      var chk  = function(n) { if (y + (n || 20) > 280) { doc.addPage(); y = 14; } };
+      var sh   = function(t) {
+        doc.setFillColor(10, 42, 74);
+        doc.rect(ML, y, CW, 7, 'F');
+        sf('bold', 9, [255,255,255]);
+        doc.text(t, ML+3, y+5);
+        y += 9;
+      };
+      var fr = function(lbl, val) {
+        var lines = wrap(val, CW - 52);
+        var rh    = Math.max(8, lines.length * 5 + 3);
+        doc.setFillColor(247, 250, 252); doc.rect(ML, y, CW, rh, 'F');
+        doc.setDrawColor(212, 220, 232); doc.setLineWidth(0.2); doc.rect(ML, y, CW, rh);
+        doc.setFillColor(240, 244, 248); doc.rect(ML, y, 48, rh, 'F');
+        sf('bold', 8, [51, 65, 85]); doc.text(lbl, ML+2, y+rh/2+1, { maxWidth:44 });
+        sf('normal', 8.5, [17,17,17]); doc.text(lines, ML+51, y+5);
+        y += rh;
+      };
+
+      // Cabeçalho
+      doc.setFillColor(10, 42, 74); doc.rect(0, 0, PW, 22, 'F');
+      doc.setFillColor(240, 165, 0); doc.rect(0, 0, 4, 22, 'F');
+      sf('bold', 14, [255,255,255]); doc.text('COMUNICAÇÃO DE ACIDENTE DE TRABALHO', ML+4, 10);
+      sf('normal', 8, [176, 196, 216]); doc.text('Formulário Eletrónico Oficial', ML+4, 16);
+      sf('bold', 10, [240, 165, 0]); doc.text(catNum, PW-14, 9, { align:'right' });
+      sf('normal', 8, [176, 196, 216]); doc.text('Emitido em ' + today, PW-14, 15, { align:'right' });
+      y = 28;
+
+      sh('1 — DADOS DO EMPREGADOR');
+      fr('Razão Social', v('razao_social')); fr('NUIT / CNPJ', v('cnpj'));
+      fr('Endereço', v('endereco')); fr('Telefone', v('telefone'));
+      y += 4; chk(70);
+
+      sh('2 — DADOS DO ACIDENTADO');
+      fr('Nome Completo', v('nome_acidentado')); fr('Nº Funcionário', v('num_func'));
+      fr('NUIT / CPF', v('cpf')); fr('Nascimento', v('nascimento'));
+      fr('Sexo', v('sexo')); fr('Função', v('funcao'));
+      y += 4; chk(80);
+
+      sh('3 — DADOS DO ACIDENTE');
+      fr('Data do Acidente', v('data_acidente')); fr('Hora', v('hora_acidente'));
+      fr('Local (tipo)', v('local_tipo')); fr('Tipo de Acidente', v('tipo_acidente'));
+      fr('Descrição do Local', v('local_acidente')); fr('Descrição da Ocorrência', v('descricao'));
+      fr('Parte do Corpo', v('parte_corpo')); fr('Agente Causador', v('agente'));
+      y += 4; chk(40);
+
+      sh('4 — ATENDIMENTO MÉDICO');
+      fr('CID-10', v('cid')); fr('Houve Afastamento?', v('afastamento')); fr('Hospital', v('hospital'));
+      y += 4; chk(30);
+
+      sh('5 — RESPONSÁVEIS');
+      fr('Testemunha', v('testemunha')); fr('Supervisor', v('supervisor'));
+      y += 10; chk(35);
+
+      // Assinaturas
+      doc.setDrawColor(10, 42, 74); doc.setLineWidth(0.5); doc.line(ML, y, PW-14, y); y += 6;
+      var sw = (CW - 12) / 3;
+      ['Responsável da Empresa', 'Trabalhador / Representante', 'Técnico de SST'].forEach(function(s, i) {
+        var sx = ML + i * (sw + 6);
+        sf('normal', 7.5, [120,120,120]); doc.text(s, sx + sw/2, y, { align:'center' });
+        doc.setDrawColor(180, 180, 180); doc.setLineWidth(0.3); doc.line(sx, y+16, sx+sw, y+16);
+      });
+
+      // Rodapé em todas as páginas
+      var tp = doc.internal.getNumberOfPages();
+      for (var p = 1; p <= tp; p++) {
+        doc.setPage(p);
+        sf('normal', 7, [160,160,160]);
+        doc.text(catNum + ' · Gerado em ' + today + ' · Pág. ' + p + '/' + tp, PW/2, 291, { align:'center' });
+      }
+
+      var nomeArq = 'CAT_' + (v('nome_acidentado') || 'acidentado').replace(/\s+/g, '_') + '_' + (v('data_acidente') || today) + '.pdf';
+      doc.save(nomeArq);
+    } catch (e) {
+      showAlert('errCat', 'Erro ao gerar PDF: ' + e.message);
+    }
+
+    setBtnLoading('btnPDF', false, '⬇ Gerar PDF');
+  }
 </script>
 </body>
 </html>

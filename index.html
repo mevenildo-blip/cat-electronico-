@@ -372,13 +372,13 @@ body { background:var(--bg); color:var(--txt); font-family:var(--fb); min-height
      <div style="font-size:10px;color:var(--mut);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Plano de subscrição</div>
      <div class="plan-row">
       <div class="po on" id="pOpt-basico" onclick="selPlan('basico')">
-       <div class="pon">Básico</div><div class="pop">500<span>MZN/mês</span></div><div class="pof">Até 50 registos</div>
+       <div class="pon">Básico</div><div class="pop">3500<span>MZN/mês</span></div><div class="pof">Até 50 registos</div>
       </div>
       <div class="po" id="pOpt-pro" onclick="selPlan('pro')">
-       <div class="pon">Pro</div><div class="pop">1200<span>MZN/mês</span></div><div class="pof">Ilimitado</div>
+       <div class="pon">Pro</div><div class="pop">5000<span>MZN/mês</span></div><div class="pof">Ilimitado</div>
       </div>
       <div class="po" id="pOpt-enterprise" onclick="selPlan('enterprise')">
-       <div class="pon">Enterprise</div><div class="pop">2500<span>MZN/mês</span></div><div class="pof">Multi-utilizador</div>
+       <div class="pon">Enterprise</div><div class="pop">10000<span>MZN/mês</span></div><div class="pof">Multi-utilizador</div>
       </div>
      </div>
     </div>
@@ -652,7 +652,7 @@ body { background:var(--bg); color:var(--txt); font-family:var(--fb); min-height
    <div class="plbig">
     <div class="pb">
      <div class="pbn">Básico</div>
-     <div class="pbp">500 <span>MZN/mês</span></div>
+     <div class="pbp">3.500 <span>MZN/mês</span></div>
      <div class="pbd">Ideal para pequenas empresas</div>
      <ul class="pfl">
       <li>Até 50 registos/mês</li><li>1 utilizador</li><li>Exportação PDF</li><li>Histórico de registos</li>
@@ -663,7 +663,7 @@ body { background:var(--bg); color:var(--txt); font-family:var(--fb); min-height
     <div class="pb feat">
      <div class="fbadge">⭐ MAIS POPULAR</div>
      <div class="pbn">Pro</div>
-     <div class="pbp">1.200 <span>MZN/mês</span></div>
+     <div class="pbp">5.000 <span>MZN/mês</span></div>
      <div class="pbd">Para empresas em crescimento</div>
      <ul class="pfl">
       <li>Registos ilimitados</li><li>Até 5 utilizadores</li><li>Exportação PDF</li>
@@ -674,7 +674,7 @@ body { background:var(--bg); color:var(--txt); font-family:var(--fb); min-height
     </div>
     <div class="pb">
      <div class="pbn">Enterprise</div>
-     <div class="pbp">2.500 <span>MZN/mês</span></div>
+     <div class="pbp">10.000 <span>MZN/mês</span></div>
      <div class="pbd">Para grandes organizações</div>
      <ul class="pfl">
       <li>Registos ilimitados</li><li>Utilizadores ilimitados</li><li>Exportação PDF</li>
@@ -1044,9 +1044,13 @@ async function carregarHist() {
   try {
     var snap = await db.collection('registos')
       .where('uid', '==', CU.uid)
-      .orderBy('criado_em', 'desc')
-      .limit(50)
       .get();
+    // Ordena no cliente para evitar necessidade de índice composto
+    snap = { docs: snap.docs.sort((a,b) => {
+      var ta = a.data().criado_em ? a.data().criado_em.toMillis() : 0;
+      var tb = b.data().criado_em ? b.data().criado_em.toMillis() : 0;
+      return tb - ta;
+    }).slice(0,50) };
 
     if (snap.empty) {
       el.innerHTML = '<div class="empty"><div class="emptyic">📋</div><div class="emptytx">Nenhum registo ainda. Cria o primeiro!</div></div>';
@@ -1110,7 +1114,7 @@ async function carregarAdmin() {
     document.getElementById('adReg').textContent = rsSnap.size;
 
     var rec = emps.reduce((a, e) => {
-      return a + (e.plano === 'enterprise' ? 2500 : e.plano === 'pro' ? 1200 : 500);
+      return a + (e.plano === 'enterprise' ? 10000 : e.plano === 'pro' ? 5000 : 3500);
     }, 0);
     document.getElementById('adRec').textContent  = rec.toLocaleString('pt-PT') + ' MZN';
     document.getElementById('adPrem').textContent = emps.filter(e => e.plano === 'pro' || e.plano === 'enterprise').length;
@@ -1131,7 +1135,7 @@ async function carregarAdmin() {
           </div>
         </div>
         <div class="es2">
-          <div class="estt"><div class="esv">${e.plano === 'enterprise' ? '2500' : e.plano === 'pro' ? '1200' : '500'}</div><div class="esl">MZN/mês</div></div>
+          <div class="estt"><div class="esv">${e.plano === 'enterprise' ? '10000' : e.plano === 'pro' ? '5000' : '3500'}</div><div class="esl">MZN/mês</div></div>
           <div class="estt"><div class="esv">${e.role === 'admin' ? '👑' : '👤'}</div><div class="esl">${e.role || 'user'}</div></div>
         </div>
         <div class="ptag ${e.plano === 'enterprise' ? 'tag-e' : e.plano === 'pro' ? 'tag-p' : 'tag-b'}">

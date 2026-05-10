@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafeWork MZ — Gestão de SST</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCPx8x3DrPZLm8LMseJgxsQp2DPzUC3T28",
+  authDomain:"cat-eletronico.firebaseapp.com",
+  projectId:"cat-eletronico",
+  storageBucket:"cat-eletronico.firebasestorage.app",
+  messagingSenderId:"81624904556",
+  appId:"1:81624904556:web:ab57c98e6663beb0073949"
+});
+const auth = firebase.auth();
+const db = firebase.firestore();
+</script>
+<style>
+/* ═══════════════════════════════════════
+   VARIÁVEIS E RESET
+═══════════════════════════════════════ */
+:root {
+  --bg:     #07090f;
+  --sur:    #0f1420;
+  --sur2:   #151d2c;
+  --bdr:    #1a2540;
+  --ac:     #00c2ff;
+  --ac2:    #ff6b35;
+  --grn:    #00e676;
+  --red:    #ff3d57;
+  --yel:    #ffd600;
+  --txt:    #e8edf5;
+  --mut:    #4a6280;
+  --fh:     'Syne', sans-serif;
+  --fb:     'DM Sans', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--txt); font-family:var(--fb); min-height:100vh; }
+
+/* ═══════════════════════════════════════
+   SPLASH / AUTH
+═══════════════════════════════════════ */
+#splash {
+  position:fixed; inset:0; background:var(--bg);
+  display:flex; align-items:center; justify-content:center;
+  z-index:1000; transition:opacity .5s;
+}
+#splash.hide { opacity:0; pointer-events:none; }
+.sw { width:100%; max-width:440px; padding:24px; animation:fadeUp .7s ease both; }
+
+/* Marca */
+.brand { display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:6px; }
+.bic {
+  width:52px; height:52px;
+  background:linear-gradient(135deg,#00c2ff,#0055ff);
+  border-radius:14px; display:flex; align-items:center; justify-content:center;
+  font-size:26px; box-shadow:0 0 40px rgba(0,194,255,.25);
+}
+.bnm { font-family:var(--fh); font-size:34px; font-weight:800; letter-spacing:-1px; }
+.bnm em { color:var(--ac); font-style:normal; }
+.btag { text-align:center; font-size:11px; color:var(--mut); letter-spacing:3px; text-transform:uppercase; margin-bottom:36px; }
+
+/* Card de auth */
+.acard { background:var(--sur); border:1px solid var(--bdr); border-radius:20px; padding:32px; }
+
+/* Tabs */
+.atabs { display:flex; background:var(--bg); border-radius:10px; padding:4px; gap:4px; margin-bottom:26px; }
+.atab { flex:1; padding:10px; border:none; background:transparent; color:var(--mut); border-radius:8px; font-family:var(--fb); font-weight:600; font-size:13px; cursor:pointer; transition:all .2s; }
+.atab.on { background:var(--ac); color:#000; }
+
+/* Campos */
+.fi { margin-bottom:14px; }
+.fi label { font-size:10px; color:var(--mut); letter-spacing:1.5px; text-transform:uppercase; display:block; margin-bottom:6px; }
+.fi input, .fi select {
+  width:100%; background:var(--bg); border:1px solid var(--bdr); border-radius:10px;
+  padding:12px 14px; color:var(--txt); font-family:var(--fb); font-size:14px;
+  outline:none; transition:border-color .2s;
+}
+.fi input:focus, .fi select:focus { border-color:var(--ac); }
+.fi input::placeholder { color:var(--mut); }
+.fi select option { background:var(--sur); }
+
+/* Botões auth */
+.btn { width:100%; padding:14px; border:none; border-radius:10px; font-family:var(--fh); font-weight:700; font-size:14px; cursor:pointer; transition:all .2s; }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.btn-a { background:linear-gradient(135deg,var(--ac),#0055ff); color:#000; }
+.btn-a:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 8px 24px rgba(0,194,255,.3); }
+.btn-g { background:var(--sur2); color:var(--mut); margin-top:8px; }
+.btn-g:hover { color:var(--txt); }
+
+/* Alertas */
+.al { padding:12px 14px; border-radius:10px; font-size:13px; margin-bottom:14px; display:none; }
+.al.on { display:block; }
+.al-e { background:rgba(255,61,87,.08); border:1px solid rgba(255,61,87,.25); color:#ff6b7a; }
+.al-s { background:rgba(0,230,118,.08); border:1px solid rgba(0,230,118,.25); color:#00e676; }
+
+/* Spinner */
+.sp {
+  display:inline-block; width:13px; height:13px;
+  border:2px solid rgba(0,0,0,.15); border-top-color:#000;
+  border-radius:50%; animation:spin .7s linear infinite;
+  vertical-align:middle; margin-right:6px;
+}
+.btn-g .sp { border-color:rgba(255,255,255,.15); border-top-color:#fff; }
+
+/* Forgot */
+.fgt { text-align:center; margin-top:10px; }
+.fgt a { color:var(--mut); font-size:12px; cursor:pointer; text-decoration:underline; }
+.fgt a:hover { color:var(--ac); }
+
+/* Planos no registo */
+.plan-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px; }
+.po { background:var(--bg); border:1px solid var(--bdr); border-radius:10px; padding:12px; cursor:pointer; text-align:center; transition:all .2s; }
+.po:hover, .po.on { border-color:var(--ac); background:rgba(0,194,255,.05); }
+.pon { font-family:var(--fh); font-weight:700; font-size:12px; margin-bottom:3px; }
+.pop { font-size:17px; font-weight:800; color:var(--ac); }
+.pop span { font-size:10px; color:var(--mut); }
+.pof { font-size:9px; color:var(--mut); margin-top:3px; }
+
+/* ═══════════════════════════════════════
+   LAYOUT APP
+═══════════════════════════════════════ */
+#app { display:none; min-height:100vh; }
+
+/* Sidebar */
+.sidebar {
+  position:fixed; left:0; top:0; bottom:0; width:232px;
+  background:var(--sur); border-right:1px solid var(--bdr);
+  display:flex; flex-direction:column; z-index:100; transition:transform .3s;
+}
+.sbt { padding:20px 18px; border-bottom:1px solid var(--bdr); }
+.sbb { display:flex; align-items:center; gap:10px; }
+.sbi { width:34px; height:34px; background:linear-gradient(135deg,var(--ac),#0055ff); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.sbn { font-family:var(--fh); font-weight:800; font-size:17px; }
+.sbn em { color:var(--ac); font-style:normal; }
+.sbu { padding:13px 18px; border-bottom:1px solid var(--bdr); }
+.sur2 { display:flex; align-items:center; gap:10px; }
+.suav { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--ac2),#cc2200); display:flex; align-items:center; justify-content:center; font-family:var(--fh); font-weight:700; font-size:14px; flex-shrink:0; }
+.suname { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.suplan { font-size:10px; color:var(--ac); letter-spacing:1px; text-transform:uppercase; }
+
+/* Nav */
+.nav { flex:1; padding:10px 0; overflow-y:auto; }
+.ns { padding:14px 18px 5px; font-size:9px; color:var(--mut); letter-spacing:2px; text-transform:uppercase; }
+.ni { display:flex; align-items:center; gap:11px; padding:11px 18px; color:var(--mut); cursor:pointer; transition:all .15s; font-size:13px; font-weight:500; border-left:3px solid transparent; }
+.ni:hover { color:var(--txt); background:rgba(255,255,255,.025); }
+.ni.on { color:var(--ac); background:rgba(0,194,255,.05); border-left-color:var(--ac); }
+.ni .ic { font-size:17px; width:20px; text-align:center; }
+.sbot { padding:14px 18px; border-top:1px solid var(--bdr); }
+.logout { display:flex; align-items:center; gap:10px; color:var(--mut); cursor:pointer; font-size:13px; transition:color .2s; }
+.logout:hover { color:var(--red); }
+
+/* Mobile */
+.mobbar { display:none; position:fixed; top:0; left:0; right:0; background:var(--sur); border-bottom:1px solid var(--bdr); padding:13px 18px; z-index:200; align-items:center; justify-content:space-between; }
+.mobtog { background:none; border:none; color:var(--txt); font-size:22px; cursor:pointer; }
+.sbov { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:99; }
+
+/* Main */
+.main { margin-left:232px; min-height:100vh; padding:32px 34px; }
+.page { display:none; }
+.page.on { display:block; animation:fadeUp .3s ease; }
+.ph { margin-bottom:24px; }
+.pt { font-family:var(--fh); font-size:26px; font-weight:800; letter-spacing:-.5px; }
+.ps { color:var(--mut); font-size:13px; margin-top:4px; }
+
+/* ═══════════════════════════════════════
+   COMPONENTES — STATS
+═══════════════════════════════════════ */
+.sg { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+.sc { background:var(--sur); border:1px solid var(--bdr); border-radius:14px; padding:18px; }
+.sl { font-size:10px; color:var(--mut); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+.sv { font-family:var(--fh); font-size:30px; font-weight:800; }
+.sv.b { color:var(--ac); } .sv.o { color:var(--ac2); } .sv.g { color:var(--grn); } .sv.r { color:var(--red); }
+.stt { font-size:11px; color:var(--mut); margin-top:4px; }
+
+/* ═══════════════════════════════════════
+   COMPONENTES — GRÁFICO
+═══════════════════════════════════════ */
+.cc { background:var(--sur); border:1px solid var(--bdr); border-radius:14px; padding:22px; margin-bottom:22px; }
+.ct { font-family:var(--fh); font-weight:700; font-size:14px; margin-bottom:18px; }
+.bc { display:flex; align-items:flex-end; gap:8px; height:110px; }
+.bw { flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; }
+.bar { width:100%; background:linear-gradient(180deg,var(--ac),rgba(0,80,255,.3)); border-radius:5px 5px 0 0; transition:height .6s ease; min-height:4px; }
+.bl { font-size:9px; color:var(--mut); }
+.bv { font-size:9px; color:var(--ac); font-weight:600; }
+
+/* ═══════════════════════════════════════
+   COMPONENTES — CARDS / LISTAS
+═══════════════════════════════════════ */
+.kc { background:var(--sur); border:1px solid var(--bdr); border-radius:14px; overflow:hidden; margin-bottom:22px; }
+.kh { padding:18px 22px; border-bottom:1px solid var(--bdr); display:flex; align-items:center; justify-content:space-between; }
+.kht { font-family:var(--fh); font-weight:700; font-size:14px; }
+.rr { padding:14px 22px; border-bottom:1px solid var(--bdr); display:flex; align-items:center; gap:14px; transition:background .15s; }
+.rr:last-child { border:none; }
+.rr:hover { background:rgba(255,255,255,.018); }
+.rb { background:rgba(0,194,255,.08); border:1px solid rgba(0,194,255,.18); color:var(--ac); font-size:9px; font-weight:700; padding:4px 8px; border-radius:5px; letter-spacing:.5px; white-space:nowrap; }
+.ri { flex:1; }
+.rn { font-size:13px; font-weight:600; }
+.rm { font-size:10px; color:var(--mut); margin-top:2px; }
+.pill { padding:3px 9px; border-radius:20px; font-size:9px; font-weight:700; letter-spacing:.5px; }
+.pill-r { background:rgba(255,61,87,.1); color:var(--red); }
+.pill-g { background:rgba(0,230,118,.1); color:var(--grn); }
+
+/* ═══════════════════════════════════════
+   COMPONENTES — FORMULÁRIO
+═══════════════════════════════════════ */
+.fc { background:var(--sur); border:1px solid var(--bdr); border-radius:14px; padding:24px; margin-bottom:18px; }
+.fst { font-family:var(--fh); font-size:11px; font-weight:700; color:var(--ac); letter-spacing:2px; text-transform:uppercase; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--bdr); }
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+.g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px; }
+.fg { margin-bottom:12px; }
+.fg label { font-size:10px; color:var(--mut); letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:5px; }
+.fg input, .fg select, .fg textarea {
+  width:100%; background:var(--bg); border:1px solid var(--bdr); border-radius:9px;
+  padding:11px 13px; color:var(--txt); font-family:var(--fb); font-size:13px;
+  outline:none; transition:border-color .2s; resize:vertical;
+}
+.fg input:focus, .fg select:focus, .fg textarea:focus { border-color:var(--ac); }
+.fg input::placeholder, .fg textarea::placeholder { color:var(--mut); }
+.fg select option { background:var(--sur); }
+
+/* Botões de acção */
+.fa { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+.bs { padding:11px 18px; border:none; border-radius:9px; font-family:var(--fh); font-weight:700; font-size:13px; cursor:pointer; transition:all .2s; white-space:nowrap; }
+.bs:disabled { opacity:.5; cursor:not-allowed; }
+.bs-a { background:linear-gradient(135deg,var(--ac),#0055ff); color:#000; }
+.bs-a:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 5px 18px rgba(0,194,255,.3); }
+.bs-o { background:linear-gradient(135deg,var(--ac2),#cc2200); color:#fff; }
+.bs-o:hover:not(:disabled) { transform:translateY(-1px); }
+.bs-g { background:var(--sur2); color:var(--mut); }
+.bs-g:hover { color:var(--txt); }
+
+/* ═══════════════════════════════════════
+   COMPONENTES — AVISO LEGAL
+═══════════════════════════════════════ */
+.notice { background:rgba(255,214,0,.04); border:1px solid rgba(255,214,0,.2); border-radius:12px; padding:16px 18px; margin-bottom:18px; display:flex; gap:12px; }
+.nic { font-size:20px; flex-shrink:0; }
+.nit { font-family:var(--fh); font-weight:700; font-size:13px; color:var(--yel); margin-bottom:4px; }
+.nitx { font-size:12px; color:#b8a030; line-height:1.5; }
+.nitx a { color:var(--yel); text-decoration:underline; cursor:pointer; }
+
+/* ═══════════════════════════════════════
+   COMPONENTES — PLANOS
+═══════════════════════════════════════ */
+.plbig { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+.pb { background:var(--sur); border:1px solid var(--bdr); border-radius:16px; padding:26px; position:relative; transition:all .3s; }
+.pb.feat { border-color:var(--ac); box-shadow:0 0 40px rgba(0,194,255,.08); }
+.fbadge { position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:var(--ac); color:#000; font-size:9px; font-weight:700; padding:3px 12px; border-radius:20px; letter-spacing:1px; white-space:nowrap; }
+.pbn { font-family:var(--fh); font-size:12px; font-weight:700; color:var(--mut); letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; }
+.pbp { font-family:var(--fh); font-size:36px; font-weight:800; margin-bottom:3px; }
+.pbp span { font-size:13px; color:var(--mut); font-weight:400; }
+.pbd { font-size:12px; color:var(--mut); margin-bottom:18px; }
+.pfl { list-style:none; margin-bottom:22px; }
+.pfl li { font-size:12px; padding:5px 0; border-bottom:1px solid var(--bdr); display:flex; align-items:center; gap:7px; }
+.pfl li:last-child { border:none; }
+.pfl li::before { content:'✓'; color:var(--grn); font-weight:700; flex-shrink:0; }
+.pfl li.no::before { content:'✗'; color:var(--mut); }
+.pfl li.no { opacity:.4; }
+
+/* ═══════════════════════════════════════
+   COMPONENTES — ADMIN
+═══════════════════════════════════════ */
+.ag { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.ec { background:var(--sur); border:1px solid var(--bdr); border-radius:13px; padding:18px; transition:border-color .2s; }
+.ec:hover { border-color:var(--ac); }
+.et { display:flex; align-items:center; gap:10px; margin-bottom:11px; }
+.ea { width:38px; height:38px; border-radius:9px; background:linear-gradient(135deg,var(--ac2),#cc2200); display:flex; align-items:center; justify-content:center; font-family:var(--fh); font-weight:800; font-size:15px; flex-shrink:0; }
+.en { font-weight:700; font-size:13px; }
+.enuit { font-size:10px; color:var(--mut); }
+.es2 { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.estt { background:var(--bg); border-radius:7px; padding:7px 9px; text-align:center; }
+.esv { font-family:var(--fh); font-weight:700; font-size:16px; color:var(--ac); }
+.esl { font-size:9px; color:var(--mut); }
+.ptag { display:inline-block; padding:3px 8px; border-radius:5px; font-size:9px; font-weight:700; letter-spacing:.5px; margin-top:8px; }
+.tag-b { background:rgba(74,98,128,.2); color:var(--mut); }
+.tag-p { background:rgba(0,194,255,.12); color:var(--ac); }
+.tag-e { background:rgba(255,107,53,.12); color:var(--ac2); }
+
+/* ═══════════════════════════════════════
+   COMPONENTES — TABELA UTILIZADORES
+═══════════════════════════════════════ */
+.ut { width:100%; border-collapse:collapse; }
+.ut th { padding:11px 16px; text-align:left; font-size:10px; color:var(--mut); letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid var(--bdr); }
+.ut td { padding:13px 16px; border-bottom:1px solid var(--bdr); font-size:12px; }
+.ut tr:last-child td { border:none; }
+.ut tr:hover td { background:rgba(255,255,255,.015); }
+.role-a { background:rgba(255,107,53,.12); color:var(--ac2); padding:3px 7px; border-radius:5px; font-size:9px; font-weight:700; }
+.role-u { background:rgba(0,194,255,.08); color:var(--ac); padding:3px 7px; border-radius:5px; font-size:9px; font-weight:700; }
+
+/* ═══════════════════════════════════════
+   UTILITÁRIOS
+═══════════════════════════════════════ */
+.empty { text-align:center; padding:44px; color:var(--mut); }
+.emptyic { font-size:44px; margin-bottom:10px; opacity:.35; }
+.emptytx { font-size:13px; }
+.hidden { display:none !important; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVO
+═══════════════════════════════════════ */
+@media(max-width:880px) {
+  .sidebar { transform:translateX(-100%); }
+  .sidebar.open { transform:none; }
+  .sbov.show { display:block; }
+  .mobbar { display:flex; }
+  .main { margin-left:0; padding:74px 16px 24px; }
+  .sg { grid-template-columns:1fr 1fr; }
+  .g2, .g3 { grid-template-columns:1fr; }
+  .plbig, .ag { grid-template-columns:1fr; }
+  .plan-row { grid-template-columns:1fr; }
+  .fa { flex-direction:column; }
+}
+
+/* ═══════════════════════════════════════
+   ANIMAÇÕES
+═══════════════════════════════════════ */
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+</style>
+</head>
+<body>
+<!-- ═══════════════════════════════════════
+     SPLASH / AUTH
+═══════════════════════════════════════ -->
+<div id="splash">
+ <div class="sw">
+  <div class="brand">
+   <div class="bic">🛡️</div>
+   <div class="bnm">Safe<em>Work</em> MZ</div>
+  </div>
+  <div class="btag">Sistema de Gestão de SST</div>
+
+  <div class="acard">
+   <div class="atabs">
+    <button class="atab on" onclick="showTab('login')">Entrar</button>
+    <button class="atab" onclick="showTab('reg')">Registar</button>
+   </div>
+
+   <!-- LOGIN -->
+   <div id="tLogin">
+    <div class="al al-e" id="eLogin"></div>
+    <div class="al al-s" id="sLogin"></div>
+    <div class="fi"><label>Email</label><input type="email" id="lEmail" placeholder="empresa@email.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    <div class="fi"><label>Password</label><input type="password" id="lPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    <button class="btn btn-a" id="btnLogin" onclick="doLogin()">Entrar →</button>
+    <div class="fgt"><a onclick="doForgot()">Esqueci a password</a></div>
+   </div>
+
+   <!-- REGISTO -->
+   <div id="tReg" style="display:none;">
+    <div class="al al-e" id="eReg"></div>
+    <div class="al al-s" id="sReg"></div>
+    <div class="fi"><label>Nome da Empresa</label><input type="text" id="rEmp" placeholder="Empresa SARL"/></div>
+    <div class="fi"><label>NUIT</label><input type="text" id="rNuit" placeholder="000 000 000"/></div>
+    <div class="fi"><label>Sector</label>
+     <select id="rSec">
+      <option value="">Seleccionar...</option>
+      <option>Mineração</option><option>Construção Civil</option><option>Indústria</option>
+      <option>Segurança Privada</option><option>Hotelaria</option><option>Transportes</option>
+      <option>Saúde</option><option>Outro</option>
+     </select>
+    </div>
+    <div class="fi"><label>Email</label><input type="email" id="rEmail" placeholder="empresa@email.com"/></div>
+    <div class="fi"><label>Password</label><input type="password" id="rPass" placeholder="Mínimo 6 caracteres"/></div>
+    <div style="margin-bottom:14px;">
+     <div style="font-size:10px;color:var(--mut);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Plano de subscrição</div>
+     <div class="plan-row">
+      <div class="po on" id="pOpt-basico" onclick="selPlan('basico')">
+       <div class="pon">Básico</div><div class="pop">500<span>MZN/mês</span></div><div class="pof">Até 50 registos</div>
+      </div>
+      <div class="po" id="pOpt-pro" onclick="selPlan('pro')">
+       <div class="pon">Pro</div><div class="pop">1200<span>MZN/mês</span></div><div class="pof">Ilimitado</div>
+      </div>
+      <div class="po" id="pOpt-enterprise" onclick="selPlan('enterprise')">
+       <div class="pon">Enterprise</div><div class="pop">2500<span>MZN/mês</span></div><div class="pof">Multi-utilizador</div>
+      </div>
+     </div>
+    </div>
+    <button class="btn btn-a" id="btnReg" onclick="doRegister()">Criar Conta →</button>
+    <button class="btn btn-g" onclick="showTab('login')">Já tenho conta</button>
+   </div>
+  </div>
+ </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     APP
+═══════════════════════════════════════ -->
+<div id="app">
+
+ <!-- Mobile Header -->
+ <div class="mobbar">
+  <button class="mobtog" onclick="toggleSB()">☰</button>
+  <div style="font-family:var(--fh);font-weight:800;">Safe<span style="color:var(--ac)">Work</span> MZ</div>
+  <div style="width:30px;"></div>
+ </div>
+ <div class="sbov" id="sbOv" onclick="closeSB()"></div>
+
+ <!-- ── SIDEBAR ── -->
+ <div class="sidebar" id="sidebar">
+  <div class="sbt">
+   <div class="sbb">
+    <div class="sbi">🛡️</div>
+    <div class="sbn">Safe<em>Work</em> MZ</div>
+   </div>
+  </div>
+  <div class="sbu">
+   <div class="sur2">
+    <div class="suav" id="uAv">?</div>
+    <div style="flex:1;min-width:0;">
+     <div class="suname" id="uName">—</div>
+     <div class="suplan" id="uPlan">—</div>
+    </div>
+   </div>
+  </div>
+  <div class="nav">
+   <div class="ns">Principal</div>
+   <div class="ni on"  onclick="goPage('dashboard')"><span class="ic">📊</span>Dashboard</div>
+   <div class="ni"     onclick="goPage('novo')">      <span class="ic">➕</span>Novo Registo</div>
+   <div class="ni"     onclick="goPage('historico')"> <span class="ic">📋</span>Histórico</div>
+   <div class="ns">Gestão</div>
+   <div class="ni"     onclick="goPage('utilizadores')"><span class="ic">👥</span>Utilizadores</div>
+   <div class="ni"     onclick="goPage('planos')">    <span class="ic">💎</span>Planos</div>
+   <div class="ni adm hidden" onclick="goPage('admin')"><span class="ic">🔧</span>Admin</div>
+  </div>
+  <div class="sbot">
+   <div class="logout" onclick="doLogout()"><span>🚪</span><span>Terminar Sessão</span></div>
+  </div>
+ </div>
+
+ <!-- ── MAIN ── -->
+ <div class="main">
+
+  <!-- ─── DASHBOARD ─── -->
+  <div class="page on" id="page-dashboard">
+   <div class="ph">
+    <div class="pt">Dashboard</div>
+    <div class="ps">Visão geral dos registos de ocorrências</div>
+   </div>
+   <div class="sg">
+    <div class="sc"><div class="sl">Total de Registos</div><div class="sv b" id="stTotal">0</div><div class="stt">Este ano</div></div>
+    <div class="sc"><div class="sl">Com Afastamento</div><div class="sv r" id="stAfast">0</div><div class="stt">Casos graves</div></div>
+    <div class="sc"><div class="sl">Sem Afastamento</div><div class="sv g" id="stSem">0</div><div class="stt">Casos leves</div></div>
+    <div class="sc"><div class="sl">Este Mês</div><div class="sv o" id="stMes">0</div><div class="stt" id="stMesL">—</div></div>
+   </div>
+   <div class="cc">
+    <div class="ct">Ocorrências por Mês (Últimos 6 meses)</div>
+    <div class="bc" id="barChart"></div>
+   </div>
+   <div class="kc">
+    <div class="kh">
+     <div class="kht">Registos Recentes</div>
+     <button class="bs bs-a" onclick="goPage('novo')">+ Novo Registo</button>
+    </div>
+    <div id="recentList">
+     <div class="empty"><div class="emptyic">📋</div><div class="emptytx">Nenhum registo ainda</div></div>
+    </div>
+   </div>
+  </div>
+
+  <!-- ─── NOVO REGISTO ─── -->
+  <div class="page" id="page-novo">
+   <div class="ph">
+    <div class="pt">Novo Registo de Ocorrência</div>
+    <div class="ps">Registo interno de acidente ou incidente de trabalho</div>
+   </div>
+
+   <!-- Aviso legal -->
+   <div class="notice">
+    <div class="nic">⚠️</div>
+    <div>
+     <div class="nit">Lembrete Legal Importante</div>
+     <div class="nitx">Este é um registo interno de SST para controlo e arquivo da empresa. Após preencher, o RH deve emitir a <strong>CAT oficial no portal do INSS em até 24 horas</strong> após o acidente. <a onclick="window.open('https://www.inss.gov.mz','_blank')">Aceder ao portal do INSS →</a></div>
+    </div>
+   </div>
+
+   <div class="al al-e" id="eOc"></div>
+   <div class="al al-s" id="sOc"></div>
+
+   <!-- Secção 1 -->
+   <div class="fc">
+    <div class="fst">1 — Dados do Empregador</div>
+    <div class="g2">
+     <div class="fg"><label>Razão Social</label><input id="o_empresa"/></div>
+     <div class="fg"><label>NUIT</label><input id="o_nuit" placeholder="000 000 000"/></div>
+    </div>
+    <div class="g3">
+     <div class="fg"><label>Sector de Actividade</label>
+      <select id="o_sector"><option>Mineração</option><option>Construção Civil</option><option>Indústria</option><option>Segurança Privada</option><option>Hotelaria</option><option>Transportes</option><option>Saúde</option><option>Outro</option></select>
+     </div>
+     <div class="fg"><label>Nº de Trabalhadores</label><input type="number" id="o_ntrab" placeholder="Ex: 150"/></div>
+     <div class="fg"><label>Telefone</label><input id="o_tel" placeholder="+258 00 000 0000"/></div>
+    </div>
+    <div class="g2">
+     <div class="fg"><label>Endereço</label><input id="o_end" placeholder="Rua, número, cidade"/></div>
+     <div class="fg"><label>Técnico de SST Responsável</label><input id="o_sst" placeholder="Nome do técnico"/></div>
+    </div>
+   </div>
+
+   <!-- Secção 2 -->
+   <div class="fc">
+    <div class="fst">2 — Dados do Trabalhador</div>
+    <div class="g2">
+     <div class="fg"><label>Nome Completo</label><input id="o_nome"/></div>
+     <div class="fg"><label>Nº Funcionário</label><input id="o_numfunc" placeholder="Ex: 00123"/></div>
+    </div>
+    <div class="g3">
+     <div class="fg"><label>NUIT do Trabalhador</label><input id="o_nuit_trab"/></div>
+     <div class="fg"><label>Data de Nascimento</label><input type="date" id="o_nasc"/></div>
+     <div class="fg"><label>Nacionalidade</label><input id="o_nac" placeholder="Moçambicana"/></div>
+    </div>
+    <div class="g3">
+     <div class="fg"><label>Sexo</label><select id="o_sexo"><option>Masculino</option><option>Feminino</option></select></div>
+     <div class="fg"><label>Estado Civil</label><select id="o_ecivil"><option>Solteiro(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viúvo(a)</option></select></div>
+     <div class="fg"><label>Nº Dependentes</label><input type="number" id="o_dep" placeholder="0"/></div>
+    </div>
+    <div class="g3">
+     <div class="fg"><label>Função / Cargo</label><input id="o_funcao" placeholder="Ex: Operador de máquinas"/></div>
+     <div class="fg"><label>Tipo de Contrato</label><select id="o_contrato"><option>Efectivo</option><option>Temporário</option><option>Prazo Certo</option><option>Prestação de Serviços</option></select></div>
+     <div class="fg"><label>Salário (MZN)</label><input type="number" id="o_salario" placeholder="Ex: 15000"/></div>
+    </div>
+    <div class="fg"><label>Tempo de Serviço na Empresa</label><input id="o_tempo" placeholder="Ex: 2 anos e 3 meses"/></div>
+   </div>
+
+   <!-- Secção 3 -->
+   <div class="fc">
+    <div class="fst">3 — Dados da Ocorrência</div>
+    <div class="g3">
+     <div class="fg"><label>Data da Ocorrência</label><input type="date" id="o_data"/></div>
+     <div class="fg"><label>Hora</label><input type="time" id="o_hora"/></div>
+     <div class="fg"><label>Turno</label><select id="o_turno"><option>Manhã</option><option>Tarde</option><option>Noite</option></select></div>
+    </div>
+    <div class="g3">
+     <div class="fg"><label>Tipo de Ocorrência</label>
+      <select id="o_tipo"><option>Acidente Típico</option><option>Acidente de Trajeto</option><option>Doença Ocupacional</option><option>Incidente / Quase-acidente</option></select>
+     </div>
+     <div class="fg"><label>Local</label><select id="o_local"><option>Estabelecimento</option><option>Trajeto</option><option>Outro</option></select></div>
+     <div class="fg"><label>Consequência</label>
+      <select id="o_conseq"><option>Incapacidade Temporária</option><option>Incapacidade Permanente</option><option>Óbito</option><option>Sem Incapacidade</option></select>
+     </div>
+    </div>
+    <div class="fg"><label>Descrição do Local</label><input id="o_localdesc" placeholder="Ex: Galpão 3, Máquina 12"/></div>
+    <div class="fg"><label>Descrição da Ocorrência</label><textarea id="o_desc" rows="3" placeholder="Descreva detalhadamente como ocorreu o acidente ou incidente..."></textarea></div>
+    <div class="g3">
+     <div class="fg"><label>Parte do Corpo Atingida</label><input id="o_corpo" placeholder="Ex: Mão direita"/></div>
+     <div class="fg"><label>Agente Causador</label><input id="o_agente" placeholder="Ex: Máquina, Queda"/></div>
+     <div class="fg"><label>Houve Danos Materiais?</label><select id="o_danos"><option>Não</option><option>Sim</option></select></div>
+    </div>
+    <div class="fg"><label>Medidas Correctivas Tomadas</label><textarea id="o_medidas" rows="2" placeholder="Acções imediatas para prevenir recorrência..."></textarea></div>
+   </div>
+
+   <!-- Secção 4 -->
+   <div class="fc">
+    <div class="fst">4 — Atendimento Médico</div>
+    <div class="g3">
+     <div class="fg"><label>CID-10 (Diagnóstico)</label><input id="o_cid" placeholder="Ex: S61.0"/></div>
+     <div class="fg"><label>Houve Afastamento?</label><select id="o_afast"><option>Não</option><option>Sim</option></select></div>
+     <div class="fg"><label>Nº Dias de Afastamento</label><input type="number" id="o_dias" placeholder="0"/></div>
+    </div>
+    <div class="g2">
+     <div class="fg"><label>Unidade de Saúde / Hospital</label><input id="o_hosp" placeholder="Ex: Hospital Provincial de Tete"/></div>
+     <div class="fg"><label>Data do Atendimento</label><input type="date" id="o_dataAtend"/></div>
+    </div>
+    <div class="g2">
+     <div class="fg"><label>Nome do Médico</label><input id="o_medico" placeholder="Dr. ..."/></div>
+     <div class="fg"><label>Nº de Ordem do Médico</label><input id="o_crm" placeholder="Ex: OM-0000"/></div>
+    </div>
+    <div class="fg"><label>Observações Médicas</label><textarea id="o_obsmed" rows="2" placeholder="Condições pré-existentes, notas clínicas relevantes..."></textarea></div>
+   </div>
+
+   <!-- Secção 5 -->
+   <div class="fc">
+    <div class="fst">5 — Responsáveis e Testemunhas</div>
+    <div class="g2">
+     <div class="fg"><label>Supervisor / Chefe de Turno</label><input id="o_sup"/></div>
+     <div class="fg"><label>Técnico de SST no Local</label><input id="o_sstloc"/></div>
+    </div>
+    <div class="g2">
+     <div class="fg"><label>Testemunha 1</label><input id="o_test1"/></div>
+     <div class="fg"><label>Testemunha 2</label><input id="o_test2"/></div>
+    </div>
+    <div class="fg"><label>Observações Gerais</label><textarea id="o_obs" rows="2" placeholder="Informação adicional relevante..."></textarea></div>
+   </div>
+
+   <div class="fa">
+    <button class="bs bs-a" id="btnSave" onclick="salvar()">💾 Guardar Registo</button>
+    <button class="bs bs-o" id="btnPDF"  onclick="gerarPDF()">⬇ Exportar PDF</button>
+    <button class="bs bs-g"              onclick="limpar()">🗑 Limpar</button>
+   </div>
+  </div>
+
+  <!-- ─── HISTÓRICO ─── -->
+  <div class="page" id="page-historico">
+   <div class="ph">
+    <div class="pt">Histórico de Registos</div>
+    <div class="ps">Todos os registos de ocorrências da empresa</div>
+   </div>
+   <div class="kc">
+    <div class="kh">
+     <div class="kht">Registos</div>
+     <button class="bs bs-a" onclick="goPage('novo')">+ Novo</button>
+    </div>
+    <div id="histList">
+     <div class="empty"><div class="emptyic">📋</div><div class="emptytx">A carregar...</div></div>
+    </div>
+   </div>
+  </div>
+
+  <!-- ─── UTILIZADORES ─── -->
+  <div class="page" id="page-utilizadores">
+   <div class="ph">
+    <div class="pt">Utilizadores</div>
+    <div class="ps">Gerir acessos da empresa</div>
+   </div>
+   <div class="kc" style="margin-bottom:18px;">
+    <div class="kh"><div class="kht">Convidar Utilizador</div></div>
+    <div style="padding:20px;">
+     <div class="al al-e" id="eUser"></div>
+     <div class="al al-s" id="sUser"></div>
+     <div class="g2">
+      <div class="fg"><label>Email</label><input type="email" id="invEmail" placeholder="colaborador@email.com"/></div>
+      <div class="fg"><label>Função</label><select id="invRole"><option value="user">Utilizador</option><option value="admin">Administrador</option></select></div>
+     </div>
+     <button class="bs bs-a" onclick="convidar()">Enviar Convite</button>
+    </div>
+   </div>
+   <div class="kc">
+    <div class="kh"><div class="kht">Equipa</div></div>
+    <div style="overflow-x:auto;">
+     <table class="ut">
+      <thead><tr><th>Utilizador</th><th>Função</th><th>Estado</th></tr></thead>
+      <tbody id="usersTbl">
+       <tr><td colspan="3" style="text-align:center;color:var(--mut);padding:22px;">A carregar...</td></tr>
+      </tbody>
+     </table>
+    </div>
+   </div>
+  </div>
+
+  <!-- ─── PLANOS ─── -->
+  <div class="page" id="page-planos">
+   <div class="ph">
+    <div class="pt">Planos e Preços</div>
+    <div class="ps">Escolhe o plano ideal para a tua empresa</div>
+   </div>
+   <div class="plbig">
+    <div class="pb">
+     <div class="pbn">Básico</div>
+     <div class="pbp">500 <span>MZN/mês</span></div>
+     <div class="pbd">Ideal para pequenas empresas</div>
+     <ul class="pfl">
+      <li>Até 50 registos/mês</li><li>1 utilizador</li><li>Exportação PDF</li><li>Histórico de registos</li>
+      <li class="no">Relatórios avançados</li><li class="no">Múltiplos utilizadores</li>
+     </ul>
+     <button class="bs bs-g" style="width:100%;">Plano actual</button>
+    </div>
+    <div class="pb feat">
+     <div class="fbadge">⭐ MAIS POPULAR</div>
+     <div class="pbn">Pro</div>
+     <div class="pbp">1.200 <span>MZN/mês</span></div>
+     <div class="pbd">Para empresas em crescimento</div>
+     <ul class="pfl">
+      <li>Registos ilimitados</li><li>Até 5 utilizadores</li><li>Exportação PDF</li>
+      <li>Histórico completo</li><li>Relatórios e estatísticas</li>
+      <li class="no">API de integração</li>
+     </ul>
+     <button class="bs bs-a" style="width:100%;">Fazer Upgrade</button>
+    </div>
+    <div class="pb">
+     <div class="pbn">Enterprise</div>
+     <div class="pbp">2.500 <span>MZN/mês</span></div>
+     <div class="pbd">Para grandes organizações</div>
+     <ul class="pfl">
+      <li>Registos ilimitados</li><li>Utilizadores ilimitados</li><li>Exportação PDF</li>
+      <li>Histórico completo</li><li>Relatórios avançados</li><li>API de integração</li>
+     </ul>
+     <button class="bs bs-o" style="width:100%;">Contactar Vendas</button>
+    </div>
+   </div>
+  </div>
+
+  <!-- ─── ADMIN ─── -->
+  <div class="page" id="page-admin">
+   <div class="ph">
+    <div class="pt">Painel de Administração</div>
+    <div class="ps">Gerir todas as empresas e subscrições</div>
+   </div>
+   <div class="sg">
+    <div class="sc"><div class="sl">Empresas Activas</div><div class="sv b" id="adEmp">—</div></div>
+    <div class="sc"><div class="sl">Total de Registos</div><div class="sv o" id="adReg">—</div></div>
+    <div class="sc"><div class="sl">Receita Estimada</div><div class="sv g" id="adRec">—</div></div>
+    <div class="sc"><div class="sl">Planos Pro/Enterprise</div><div class="sv r" id="adPrem">—</div></div>
+   </div>
+   <div class="kc">
+    <div class="kh"><div class="kht">Empresas Registadas</div></div>
+    <div class="ag" style="padding:18px;" id="adminGrid">
+     <div class="empty"><div class="emptyic">🏢</div><div class="emptytx">A carregar...</div></div>
+    </div>
+   </div>
+  </div>
+
+ </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════════
+// VARIÁVEIS GLOBAIS
+// ═══════════════════════════════════════
+let CU = null;   // Current User (Firebase)
+let ED = {};     // Empresa Data
+let selPlanVal = 'basico';
+const ADMIN = 'evenildo@gmail.com'; // Email do administrador do sistema
+const MES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+// ═══════════════════════════════════════
+// UTILITÁRIOS
+// ═══════════════════════════════════════
+function sa(id, m) {
+  var e = document.getElementById(id);
+  if (!e) return;
+  e.textContent = m;
+  e.classList.add('on');
+}
+function ha(id) {
+  var e = document.getElementById(id);
+  if (e) e.classList.remove('on');
+}
+function sb2(id, on, orig, lt) {
+  var b = document.getElementById(id);
+  if (!b) return;
+  b.disabled = on;
+  b.innerHTML = on ? '<span class="sp"></span>' + (lt || 'A processar...') : orig;
+}
+function fv(id) {
+  var e = document.getElementById(id);
+  return e ? e.value.trim() : '';
+}
+function sv2(id, v) {
+  var e = document.getElementById(id);
+  if (e) e.value = v || '';
+}
+
+// ═══════════════════════════════════════
+// TABS DE AUTH
+// ═══════════════════════════════════════
+function showTab(t) {
+  document.getElementById('tLogin').style.display = t === 'login' ? 'block' : 'none';
+  document.getElementById('tReg').style.display   = t === 'reg'   ? 'block' : 'none';
+  document.querySelectorAll('.atab').forEach((e, i) => {
+    e.classList.toggle('on', (i === 0 && t === 'login') || (i === 1 && t === 'reg'));
+  });
+}
+
+// ═══════════════════════════════════════
+// SELECÇÃO DE PLANO
+// ═══════════════════════════════════════
+function selPlan(p) {
+  selPlanVal = p;
+  ['basico', 'pro', 'enterprise'].forEach(x => {
+    document.getElementById('pOpt-' + x).classList.remove('on');
+  });
+  document.getElementById('pOpt-' + p).classList.add('on');
+}
+
+// ═══════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════
+async function doLogin() {
+  ha('eLogin'); ha('sLogin');
+  var em = fv('lEmail');
+  var pw = document.getElementById('lPass').value;
+  if (!em || !pw) { sa('eLogin', 'Preenche o email e a password.'); return; }
+  sb2('btnLogin', true, 'Entrar →', 'A entrar...');
+  try {
+    await auth.signInWithEmailAndPassword(em, pw);
+    // Sucesso — onAuthStateChanged trata do resto
+  } catch(e) {
+    var msgs = {
+      'auth/user-not-found':       'Conta não encontrada.',
+      'auth/wrong-password':       'Password incorrecta.',
+      'auth/invalid-credential':   'Email ou password incorrectos.',
+      'auth/too-many-requests':    'Muitas tentativas. Aguarda uns minutos.',
+      'auth/network-request-failed': 'Sem ligação à internet.'
+    };
+    sa('eLogin', msgs[e.code] || e.message);
+    sb2('btnLogin', false, 'Entrar →');
+  }
+}
+
+// ═══════════════════════════════════════
+// RECUPERAR PASSWORD
+// ═══════════════════════════════════════
+async function doForgot() {
+  var em = fv('lEmail');
+  if (!em) { sa('eLogin', 'Escreve o teu email primeiro.'); return; }
+  ha('eLogin');
+  try {
+    await auth.sendPasswordResetEmail(em);
+    sa('sLogin', '✓ Email de recuperação enviado para ' + em);
+  } catch(e) {
+    sa('eLogin', e.code === 'auth/user-not-found' ? 'Email não encontrado.' : 'Erro: ' + e.message);
+  }
+}
+
+// ═══════════════════════════════════════
+// REGISTO
+// ═══════════════════════════════════════
+async function doRegister() {
+  ha('eReg'); ha('sReg');
+  var emp  = fv('rEmp');
+  var nuit = fv('rNuit');
+  var sec  = fv('rSec');
+  var em   = fv('rEmail');
+  var pw   = document.getElementById('rPass').value;
+  if (!emp || !em || !pw) { sa('eReg', 'Preenche todos os campos obrigatórios.'); return; }
+  if (pw.length < 6)      { sa('eReg', 'A password deve ter mínimo 6 caracteres.'); return; }
+  sb2('btnReg', true, 'Criar Conta →', 'A criar...');
+  try {
+    var cred = await auth.createUserWithEmailAndPassword(em, pw);
+    await db.collection('empresas').doc(cred.user.uid).set({
+      nome:      emp,
+      nuit:      nuit,
+      sector:    sec,
+      email:     em,
+      plano:     selPlanVal,
+      role:      'admin',
+      criado_em: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    sa('sReg', '✓ Conta criada! Bem-vindo ao SafeWork MZ.');
+  } catch(e) {
+    var msgs = {
+      'auth/email-already-in-use': 'Este email já está registado.',
+      'auth/invalid-email':        'Email inválido.'
+    };
+    sa('eReg', msgs[e.code] || e.message);
+    sb2('btnReg', false, 'Criar Conta →');
+  }
+}
+
+// ═══════════════════════════════════════
+// LOGOUT
+// ═══════════════════════════════════════
+async function doLogout() {
+  await auth.signOut();
+}
+
+// ═══════════════════════════════════════
+// ESTADO DE AUTENTICAÇÃO
+// ═══════════════════════════════════════
+auth.onAuthStateChanged(async function(u) {
+  if (u) {
+    CU = u;
+    try {
+      var doc = await db.collection('empresas').doc(u.uid).get();
+      ED = doc.data() || {};
+    } catch(e) { ED = {}; }
+    iniciar();
+  } else {
+    CU = null; ED = {};
+    document.getElementById('splash').classList.remove('hide');
+    document.getElementById('app').style.display = 'none';
+    // Repõe botões — nunca ficam travados
+    sb2('btnLogin', false, 'Entrar →');
+    sb2('btnReg',   false, 'Criar Conta →');
+  }
+});
+
+// ═══════════════════════════════════════
+// INICIAR APP
+// ═══════════════════════════════════════
+function iniciar() {
+  document.getElementById('splash').classList.add('hide');
+  document.getElementById('app').style.display = 'block';
+
+  // Info do utilizador na sidebar
+  var nome = ED.nome || CU.email;
+  document.getElementById('uName').textContent = nome;
+  document.getElementById('uPlan').textContent = (ED.plano || 'básico').toUpperCase();
+  document.getElementById('uAv').textContent   = (nome[0] || '?').toUpperCase();
+
+  // Pré-preenche formulário com dados da empresa
+  sv2('o_empresa', ED.nome);
+  sv2('o_nuit',    ED.nuit);
+  if (ED.sector) document.getElementById('o_sector').value = ED.sector;
+
+  // Mostra menu Admin se for o administrador do sistema
+  if (CU.email === ADMIN) {
+    document.querySelectorAll('.adm').forEach(e => e.classList.remove('hidden'));
+  }
+
+  // Carrega dados
+  carregarDash();
+  carregarHist();
+  carregarUsers();
+}
+
+// ═══════════════════════════════════════
+// NAVEGAÇÃO ENTRE PÁGINAS
+// ═══════════════════════════════════════
+function goPage(p) {
+  // Remove active de todas as páginas e itens nav
+  document.querySelectorAll('.page').forEach(e => e.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(e => e.classList.remove('on'));
+
+  // Activa a página
+  var pg = document.getElementById('page-' + p);
+  if (pg) pg.classList.add('on');
+
+  // Activa item nav correspondente
+  var labels = {
+    'dashboard':    'dashboard',
+    'novo':         'novo registo',
+    'historico':    'histórico',
+    'utilizadores': 'utilizadores',
+    'planos':       'planos',
+    'admin':        'admin'
+  };
+  document.querySelectorAll('.ni').forEach(function(ni) {
+    var txt = ni.textContent.trim().toLowerCase();
+    if (labels[p] && txt.includes(labels[p].split(' ')[0])) {
+      ni.classList.add('on');
+    }
+  });
+
+  // Carrega dados específicos da página
+  if (p === 'admin')     carregarAdmin();
+  if (p === 'historico') carregarHist();
+
+  closeSB();
+}
+
+// ═══════════════════════════════════════
+// SIDEBAR MOBILE
+// ═══════════════════════════════════════
+function toggleSB() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sbOv').classList.toggle('show');
+}
+function closeSB() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sbOv').classList.remove('show');
+}
+
+// ═══════════════════════════════════════
+// DASHBOARD — CARREGAR DADOS
+// ═══════════════════════════════════════
+async function carregarDash() {
+  if (!CU) return;
+  try {
+    var snap = await db.collection('registos')
+      .where('uid', '==', CU.uid)
+      .get();
+
+    var rs  = snap.docs.map(d => d.data());
+    var tot = rs.length;
+    var afast = rs.filter(r => r.afastamento === 'Sim').length;
+    var mesAtual = new Date().getMonth();
+    var anoAtual = new Date().getFullYear();
+    var dMes = rs.filter(r => {
+      if (!r.data) return false;
+      var d = new Date(r.data);
+      return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+    }).length;
+
+    // Actualiza stats
+    document.getElementById('stTotal').textContent = tot;
+    document.getElementById('stAfast').textContent = afast;
+    document.getElementById('stSem').textContent   = tot - afast;
+    document.getElementById('stMes').textContent   = dMes;
+    document.getElementById('stMesL').textContent  = MES[mesAtual];
+
+    // Gráfico e lista recente
+    renderChart(rs);
+    renderRecent(rs.slice(-5).reverse());
+
+  } catch(e) { console.error('Erro dashboard:', e); }
+}
+
+// ═══════════════════════════════════════
+// DASHBOARD — GRÁFICO DE BARRAS
+// ═══════════════════════════════════════
+function renderChart(rs) {
+  var el  = document.getElementById('barChart');
+  var now = new Date();
+  var data = [];
+
+  // Últimos 6 meses
+  for (var i = 5; i >= 0; i--) {
+    var d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    var cnt = rs.filter(r => {
+      if (!r.data) return false;
+      var cd = new Date(r.data);
+      return cd.getMonth() === d.getMonth() && cd.getFullYear() === d.getFullYear();
+    }).length;
+    data.push({ m: MES[d.getMonth()], n: cnt });
+  }
+
+  var mx = Math.max(...data.map(d => d.n), 1);
+  el.innerHTML = data.map(d => `
+    <div class="bw">
+      <div class="bv">${d.n || ''}</div>
+      <div class="bar" style="height:${Math.max((d.n / mx) * 100, 4)}px;"></div>
+      <div class="bl">${d.m}</div>
+    </div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════
+// DASHBOARD — REGISTOS RECENTES
+// ═══════════════════════════════════════
+function renderRecent(rs) {
+  var el = document.getElementById('recentList');
+  if (!rs.length) {
+    el.innerHTML = '<div class="empty"><div class="emptyic">📋</div><div class="emptytx">Nenhum registo ainda</div></div>';
+    return;
+  }
+  el.innerHTML = rs.map(r => `
+    <div class="rr">
+      <div class="rb">${r.num || '—'}</div>
+      <div class="ri">
+        <div class="rn">${r.nome || '—'}</div>
+        <div class="rm">${r.data || '—'} · ${r.tipo || '—'} · ${r.funcao || '—'}</div>
+      </div>
+      <span class="pill ${r.afastamento === 'Sim' ? 'pill-r' : 'pill-g'}">
+        ${r.afastamento === 'Sim' ? 'Com Afastamento' : 'Sem Afastamento'}
+      </span>
+    </div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════
+// HISTÓRICO
+// ═══════════════════════════════════════
+async function carregarHist() {
+  if (!CU) return;
+  var el = document.getElementById('histList');
+  el.innerHTML = '<div class="empty"><div class="emptyic">⏳</div><div class="emptytx">A carregar...</div></div>';
+  try {
+    var snap = await db.collection('registos')
+      .where('uid', '==', CU.uid)
+      .orderBy('criado_em', 'desc')
+      .limit(50)
+      .get();
+
+    if (snap.empty) {
+      el.innerHTML = '<div class="empty"><div class="emptyic">📋</div><div class="emptytx">Nenhum registo ainda. Cria o primeiro!</div></div>';
+      return;
+    }
+    el.innerHTML = snap.docs.map(d => {
+      var r = d.data();
+      return `
+        <div class="rr">
+          <div class="rb">${r.num || '—'}</div>
+          <div class="ri">
+            <div class="rn">${r.nome || '—'}</div>
+            <div class="rm">${r.data || '—'} · ${r.tipo || '—'} · ${r.funcao || '—'}</div>
+            <div class="rm" style="margin-top:2px;color:var(--mut);">Registado em: ${r.data_abertura || '—'}</div>
+          </div>
+          <span class="pill ${r.afastamento === 'Sim' ? 'pill-r' : 'pill-g'}">
+            ${r.afastamento === 'Sim' ? 'Com Afastamento' : 'Sem Afastamento'}
+          </span>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><div class="emptyic">⚠️</div><div class="emptytx">Erro ao carregar: ' + e.message + '</div></div>';
+  }
+}
+
+// ═══════════════════════════════════════
+// UTILIZADORES
+// ═══════════════════════════════════════
+async function carregarUsers() {
+  if (!CU) return;
+  var tb = document.getElementById('usersTbl');
+  var nome = ED.nome || CU.email;
+  tb.innerHTML = `
+    <tr>
+      <td>${nome}<br><span style="color:var(--mut);font-size:10px;">${CU.email}</span></td>
+      <td><span class="role-a">Admin</span></td>
+      <td><span style="color:var(--grn);font-size:11px;">● Activo</span></td>
+    </tr>`;
+}
+
+async function convidar() {
+  ha('eUser'); ha('sUser');
+  var em = fv('invEmail');
+  if (!em) { sa('eUser', 'Introduz um email válido.'); return; }
+  // Funcionalidade completa disponível no plano Enterprise
+  sa('sUser', '✓ Convite registado para ' + em + '. Disponível no plano Enterprise.');
+}
+
+// ═══════════════════════════════════════
+// ADMIN — CARREGAR TODAS AS EMPRESAS
+// ═══════════════════════════════════════
+async function carregarAdmin() {
+  if (!CU || CU.email !== ADMIN) return;
+  try {
+    var esSnap = await db.collection('empresas').get();
+    var rsSnap = await db.collection('registos').get();
+    var emps   = esSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Stats globais
+    document.getElementById('adEmp').textContent = emps.length;
+    document.getElementById('adReg').textContent = rsSnap.size;
+
+    var rec = emps.reduce((a, e) => {
+      return a + (e.plano === 'enterprise' ? 2500 : e.plano === 'pro' ? 1200 : 500);
+    }, 0);
+    document.getElementById('adRec').textContent  = rec.toLocaleString('pt-PT') + ' MZN';
+    document.getElementById('adPrem').textContent = emps.filter(e => e.plano === 'pro' || e.plano === 'enterprise').length;
+
+    // Grid de empresas
+    var grid = document.getElementById('adminGrid');
+    if (!emps.length) {
+      grid.innerHTML = '<div class="empty"><div class="emptyic">🏢</div><div class="emptytx">Nenhuma empresa registada</div></div>';
+      return;
+    }
+    grid.innerHTML = emps.map(e => `
+      <div class="ec">
+        <div class="et">
+          <div class="ea">${(e.nome || '?')[0].toUpperCase()}</div>
+          <div>
+            <div class="en">${e.nome || '—'}</div>
+            <div class="enuit">${e.nuit || '—'} · ${e.sector || '—'}</div>
+          </div>
+        </div>
+        <div class="es2">
+          <div class="estt"><div class="esv">${e.plano === 'enterprise' ? '2500' : e.plano === 'pro' ? '1200' : '500'}</div><div class="esl">MZN/mês</div></div>
+          <div class="estt"><div class="esv">${e.role === 'admin' ? '👑' : '👤'}</div><div class="esl">${e.role || 'user'}</div></div>
+        </div>
+        <div class="ptag ${e.plano === 'enterprise' ? 'tag-e' : e.plano === 'pro' ? 'tag-p' : 'tag-b'}">
+          ${(e.plano || 'básico').toUpperCase()}
+        </div>
+      </div>`
+    ).join('');
+  } catch(e) { console.error('Erro admin:', e); }
+}
+</script>
+
+<script>
+// ═══════════════════════════════════════
+// GERAR NÚMERO SEQUENCIAL DO REGISTO
+// ═══════════════════════════════════════
+async function gerarNum(uid) {
+  var snap = await db.collection('registos').where('uid', '==', uid).get();
+  var seq  = String(snap.size + 1).padStart(4, '0');
+  var ano  = new Date().getFullYear();
+  return 'RO-' + ano + '-' + seq;
+}
+
+// ═══════════════════════════════════════
+// GUARDAR REGISTO NO FIRESTORE
+// ═══════════════════════════════════════
+async function salvar() {
+  if (!CU) return;
+  ha('eOc'); ha('sOc');
+  sb2('btnSave', true, '💾 Guardar Registo', 'A guardar...');
+  try {
+    var num = await gerarNum(CU.uid);
+    var reg = {
+      uid:          CU.uid,
+      num:          num,
+      data_abertura: new Date().toLocaleDateString('pt-PT'),
+      criado_em:    firebase.firestore.FieldValue.serverTimestamp(),
+      // Secção 1 — Empregador
+      empresa:  fv('o_empresa'),
+      nuit:     fv('o_nuit'),
+      sector:   fv('o_sector'),
+      ntrab:    fv('o_ntrab'),
+      tel:      fv('o_tel'),
+      end:      fv('o_end'),
+      sst:      fv('o_sst'),
+      // Secção 2 — Trabalhador
+      nome:         fv('o_nome'),
+      numfunc:      fv('o_numfunc'),
+      nuit_trab:    fv('o_nuit_trab'),
+      nasc:         fv('o_nasc'),
+      nacionalidade:fv('o_nac'),
+      sexo:         fv('o_sexo'),
+      ecivil:       fv('o_ecivil'),
+      dep:          fv('o_dep'),
+      funcao:       fv('o_funcao'),
+      contrato:     fv('o_contrato'),
+      salario:      fv('o_salario'),
+      tempo:        fv('o_tempo'),
+      // Secção 3 — Ocorrência
+      data:      fv('o_data'),
+      hora:      fv('o_hora'),
+      turno:     fv('o_turno'),
+      tipo:      fv('o_tipo'),
+      local:     fv('o_local'),
+      conseq:    fv('o_conseq'),
+      localdesc: fv('o_localdesc'),
+      desc:      fv('o_desc'),
+      corpo:     fv('o_corpo'),
+      agente:    fv('o_agente'),
+      danos:     fv('o_danos'),
+      medidas:   fv('o_medidas'),
+      // Secção 4 — Médico
+      cid:       fv('o_cid'),
+      afastamento: fv('o_afast'),
+      dias:      fv('o_dias'),
+      hosp:      fv('o_hosp'),
+      dataAtend: fv('o_dataAtend'),
+      medico:    fv('o_medico'),
+      crm:       fv('o_crm'),
+      obsmed:    fv('o_obsmed'),
+      // Secção 5 — Responsáveis
+      sup:    fv('o_sup'),
+      sstloc: fv('o_sstloc'),
+      test1:  fv('o_test1'),
+      test2:  fv('o_test2'),
+      obs:    fv('o_obs')
+    };
+
+    await db.collection('registos').add(reg);
+    sa('sOc', '✓ Registo ' + num + ' guardado com sucesso! Lembre-se de emitir a CAT oficial no INSS em até 24h.');
+    carregarDash();
+    carregarHist();
+
+  } catch(e) {
+    sa('eOc', 'Erro ao guardar: ' + e.message);
+  }
+  sb2('btnSave', false, '💾 Guardar Registo');
+}
+
+// ═══════════════════════════════════════
+// LIMPAR FORMULÁRIO
+// ═══════════════════════════════════════
+function limpar() {
+  var campos = [
+    'o_nome','o_numfunc','o_nuit_trab','o_nasc','o_nac','o_dep',
+    'o_funcao','o_salario','o_tempo',
+    'o_data','o_hora','o_localdesc','o_desc','o_corpo','o_agente','o_medidas',
+    'o_cid','o_dias','o_hosp','o_dataAtend','o_medico','o_crm','o_obsmed',
+    'o_sup','o_sstloc','o_test1','o_test2','o_obs'
+  ];
+  campos.forEach(id => sv2(id, ''));
+  ha('eOc'); ha('sOc');
+}
+
+// ═══════════════════════════════════════
+// GERAR PDF
+// ═══════════════════════════════════════
+async function gerarPDF() {
+  ha('eOc');
+  sb2('btnPDF', true, '⬇ Exportar PDF', 'A gerar PDF...');
+  try {
+    var jsPDF  = window.jspdf.jsPDF;
+    var doc    = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    var PW=210, ML=14, CW=182, y=14;
+    var today  = new Date().toLocaleDateString('pt-PT');
+    var num    = await gerarNum(CU.uid);
+
+    // ── Funções auxiliares de PDF ──
+    var sf = function(st, sz, c) {
+      doc.setFont('helvetica', st);
+      doc.setFontSize(sz);
+      doc.setTextColor.apply(doc, c || [20,20,20]);
+    };
+    var wrap = function(t, w) {
+      return doc.splitTextToSize(String(t || '—'), w);
+    };
+    var chk = function(n) {
+      if (y + (n || 20) > 278) { doc.addPage(); y = 14; }
+    };
+    var sh = function(t) {
+      chk(12);
+      doc.setFillColor(7, 28, 60);
+      doc.rect(ML, y, CW, 7, 'F');
+      sf('bold', 9, [255,255,255]);
+      doc.text(t, ML+3, y+5);
+      y += 9;
+    };
+    var fr = function(lbl, val) {
+      var lines = wrap(val, CW - 52);
+      var rh    = Math.max(8, lines.length * 5 + 3);
+      chk(rh);
+      doc.setFillColor(248, 250, 253);
+      doc.rect(ML, y, CW, rh, 'F');
+      doc.setDrawColor(215, 225, 235);
+      doc.setLineWidth(0.2);
+      doc.rect(ML, y, CW, rh);
+      doc.setFillColor(235, 242, 250);
+      doc.rect(ML, y, 48, rh, 'F');
+      sf('bold', 8, [50, 70, 100]);
+      doc.text(lbl, ML+2, y + rh/2 + 1, { maxWidth: 44 });
+      sf('normal', 8.5, [20,20,20]);
+      doc.text(lines, ML+51, y+5);
+      y += rh;
+    };
+
+    // ── CABEÇALHO ──
+    doc.setFillColor(7, 28, 60);
+    doc.rect(0, 0, PW, 30, 'F');
+    doc.setFillColor(0, 194, 255);
+    doc.rect(0, 0, 5, 30, 'F');
+
+    sf('bold', 15, [255,255,255]);
+    doc.text('REGISTO INTERNO DE OCORRÊNCIA', ML+7, 11);
+
+    sf('bold', 10, [0,194,255]);
+    doc.text('SafeWork MZ — Sistema de Gestão de SST', ML+7, 18);
+
+    sf('normal', 7.5, [100,150,180]);
+    doc.text('Documento de uso interno. Não substitui a CAT oficial do INSS.', ML+7, 24);
+
+    sf('bold', 11, [0,194,255]);
+    doc.text(num, PW-14, 11, { align:'right' });
+    sf('normal', 8, [140,180,210]);
+    doc.text('Emitido em ' + today, PW-14, 17, { align:'right' });
+
+    y = 36;
+
+    // ── SECÇÃO 1 — EMPREGADOR ──
+    sh('1 — DADOS DO EMPREGADOR');
+    fr('Razão Social',        fv('o_empresa'));
+    fr('NUIT',                fv('o_nuit'));
+    fr('Sector de Actividade',fv('o_sector'));
+    fr('Nº de Trabalhadores', fv('o_ntrab'));
+    fr('Endereço',            fv('o_end'));
+    fr('Telefone',            fv('o_tel'));
+    fr('Técnico de SST',      fv('o_sst'));
+    y += 3;
+
+    // ── SECÇÃO 2 — TRABALHADOR ──
+    sh('2 — DADOS DO TRABALHADOR');
+    fr('Nome Completo',       fv('o_nome'));
+    fr('Nº Funcionário',      fv('o_numfunc'));
+    fr('NUIT',                fv('o_nuit_trab'));
+    fr('Data de Nascimento',  fv('o_nasc'));
+    fr('Nacionalidade',       fv('o_nac'));
+    fr('Sexo',                fv('o_sexo'));
+    fr('Estado Civil',        fv('o_ecivil'));
+    fr('Nº Dependentes',      fv('o_dep'));
+    fr('Função / Cargo',      fv('o_funcao'));
+    fr('Tipo de Contrato',    fv('o_contrato'));
+    fr('Salário (MZN)',        fv('o_salario'));
+    fr('Tempo de Serviço',    fv('o_tempo'));
+    y += 3;
+
+    // ── SECÇÃO 3 — OCORRÊNCIA ──
+    sh('3 — DADOS DA OCORRÊNCIA');
+    fr('Data',                    fv('o_data'));
+    fr('Hora',                    fv('o_hora'));
+    fr('Turno',                   fv('o_turno'));
+    fr('Tipo de Ocorrência',      fv('o_tipo'));
+    fr('Local',                   fv('o_local'));
+    fr('Consequência',            fv('o_conseq'));
+    fr('Descrição do Local',      fv('o_localdesc'));
+    fr('Descrição da Ocorrência', fv('o_desc'));
+    fr('Parte do Corpo Atingida', fv('o_corpo'));
+    fr('Agente Causador',         fv('o_agente'));
+    fr('Danos Materiais',         fv('o_danos'));
+    fr('Medidas Correctivas',     fv('o_medidas'));
+    y += 3;
+
+    // ── SECÇÃO 4 — MÉDICO ──
+    sh('4 — ATENDIMENTO MÉDICO');
+    fr('CID-10 (Diagnóstico)',    fv('o_cid'));
+    fr('Houve Afastamento?',      fv('o_afast'));
+    fr('Nº Dias de Afastamento',  fv('o_dias'));
+    fr('Unidade de Saúde',        fv('o_hosp'));
+    fr('Data do Atendimento',     fv('o_dataAtend'));
+    fr('Nome do Médico',          fv('o_medico'));
+    fr('Nº de Ordem do Médico',   fv('o_crm'));
+    fr('Observações Médicas',     fv('o_obsmed'));
+    y += 3;
+
+    // ── SECÇÃO 5 — RESPONSÁVEIS ──
+    sh('5 — RESPONSÁVEIS E TESTEMUNHAS');
+    fr('Supervisor / Chefe de Turno', fv('o_sup'));
+    fr('Técnico de SST no Local',     fv('o_sstloc'));
+    fr('Testemunha 1',                fv('o_test1'));
+    fr('Testemunha 2',                fv('o_test2'));
+    fr('Observações Gerais',          fv('o_obs'));
+    y += 10;
+
+    // ── ASSINATURAS ──
+    chk(40);
+    doc.setDrawColor(7, 28, 60);
+    doc.setLineWidth(0.4);
+    doc.line(ML, y, PW-14, y);
+    y += 6;
+
+    var sw = (CW - 12) / 3;
+    ['Responsável da Empresa', 'Trabalhador / Representante', 'Técnico de SST'].forEach(function(s, i) {
+      var sx = ML + i * (sw + 6);
+      sf('normal', 7.5, [120,120,120]);
+      doc.text(s, sx + sw/2, y, { align:'center' });
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.3);
+      doc.line(sx, y+16, sx+sw, y+16);
+    });
+
+    y += 24;
+
+    // ── AVISO LEGAL ──
+    chk(16);
+    doc.setFillColor(255, 243, 180);
+    doc.rect(ML, y, CW, 14, 'F');
+    doc.setDrawColor(200, 160, 0);
+    doc.setLineWidth(0.3);
+    doc.rect(ML, y, CW, 14);
+    sf('bold', 8, [120,90,0]);
+    doc.text('⚠  AVISO LEGAL:', ML+3, y+5);
+    sf('normal', 7.5, [120,90,0]);
+    doc.text(
+      'Este documento é de uso interno da empresa. A Comunicação de Acidente de Trabalho (CAT) oficial',
+      ML+3, y+9, { maxWidth: CW-6 }
+    );
+    doc.text(
+      'deve ser emitida no portal do INSS (www.inss.gov.mz) em até 24 horas após o acidente.',
+      ML+3, y+13, { maxWidth: CW-6 }
+    );
+
+    // ── RODAPÉ EM TODAS AS PÁGINAS ──
+    var tp = doc.internal.getNumberOfPages();
+    for (var p = 1; p <= tp; p++) {
+      doc.setPage(p);
+      sf('normal', 7, [160,160,160]);
+      doc.text(
+        'SafeWork MZ  ·  ' + num + '  ·  ' + today + '  ·  Pág. ' + p + '/' + tp,
+        PW/2, 291, { align:'center' }
+      );
+    }
+
+    // ── GUARDAR FICHEIRO ──
+    var nomeArq = 'RO_' +
+      (fv('o_nome') || 'trabalhador').replace(/\s+/g, '_') +
+      '_' + (fv('o_data') || today) + '.pdf';
+    doc.save(nomeArq);
+
+  } catch(e) {
+    sa('eOc', 'Erro ao gerar PDF: ' + e.message);
+  }
+  sb2('btnPDF', false, '⬇ Exportar PDF');
+}
+</script>
+
+</body>
+</html>

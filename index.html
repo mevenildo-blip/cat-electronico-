@@ -20,6 +20,8 @@ firebase.initializeApp({
 });
 const auth = firebase.auth();
 const db = firebase.firestore();
+// Sessão termina quando o browser fecha — utilizador deve fazer login novamente
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 </script>
 <style>
 /* ═══════════════════════════════════════
@@ -715,7 +717,7 @@ body { background:var(--bg); color:var(--txt); font-family:var(--fb); min-height
 let CU = null;   // Current User (Firebase)
 let ED = {};     // Empresa Data
 let selPlanVal = 'basico';
-const ADMIN = 'evenildo@gmail.com'; // Email do administrador do sistema
+const ADMIN = 'mevenildo@gmail.com'; // Email do administrador do sistema
 const MES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
 // ═══════════════════════════════════════
